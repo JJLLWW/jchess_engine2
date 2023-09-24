@@ -4,10 +4,12 @@ project(jchess_engine_2)
 set(CMAKE_CXX_STANDARD 20)
 
 set(TARGET_SOURCES src/main.cpp
+    src/uci/uci.cpp
     src/uci/uci.h
+    src/uci/fen.cpp
     src/uci/fen.h
-    src/uci/CommandParser.cpp
-    src/uci/CommandParser.h)
+    src/uci/utils.cpp
+    src/uci/utils.h)
 
 add_executable(jchess_engine ${TARGET_SOURCES})
 

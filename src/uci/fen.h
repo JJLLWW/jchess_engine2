@@ -2,20 +2,36 @@
 
 #include <string>
 #include <optional>
-#include <unordered_map>
+#include <utility>
 
-namespace {
-    inline constexpr bool isRank(char c) {
-        return '1' <= c && c <= '8';
-    }
-    inline constexpr bool isFile(char c) {
-        return 'a' <= c && c <= 'h';
-    }
-    std::unordered_map<char, jchess::fen::Promotion>
-}
 
 namespace jchess::fen {
-    struct FEN {};
+    enum class PieceType {
+        PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
+    };
+
+    struct Piece {
+        std::pair<int, int> square;
+        PieceType type;
+    };
+
+    enum CastleFlags {
+        WHITE_QS = 1,
+        WHITE_KS = 2,
+        BLACK_QS = 4,
+        BLACK_KS = 8
+    };
+
+    struct FEN {
+        using CastleFlags = int;
+        std::vector<Piece> pieces;
+        bool isWhitesMove;
+        CastleFlags castleFlags;
+        std::optional<std::pair<int, int>> enpSquare;
+        int nHalfMove;
+        int nMove;
+        static std::optional<FEN> fromString(std::string const& line);
+    };
 
     enum class Promotion {
         NONE, KNIGHT, BISHOP, ROOK, QUEEN
@@ -25,21 +41,7 @@ namespace jchess::fen {
     struct Move {
         int sourceRank, sourceFile;
         int targetRank, targetFile;
-        Promotion promotion;
-        static std::optional<Move> fromString(std::string const& word) {
-            if(
-                word.size() < 4 ||
-                !isFile(word[0]) || !isRank(word[1]) ||
-                !isFile(word[2]) || !isRank(word[3])
-                ) {
-                return std::nullopt;
-            }
-            Move move;
-            move.sourceFile = word[0] - 'a';
-            move.sourceRank = word[1] - '1';
-            move.targetFile = word[2] - 'a';
-            move.targetRank = word[3] - '1';
-
-        }
+        Promotion promotion = Promotion::NONE;
+        static std::optional<Move> fromString(std::string const& word);
     };
 }
