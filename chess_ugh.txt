@@ -1,0 +1,70 @@
+how do established engines handle uci?
+https://github.com/official-stockfish/Stockfish/blob/master/src/uci.cpp
+
+uci <- initialise connection, quit <- terminate connection
+
+is it valid to think of UCI from the GUI side as being request response?
+- register doesn't seem to be supported by Stockfish / other UCI engines
+- believe all weird commands seemingly sent from engine (copyprotection/registration) are obsolete.
+- would you ever get a response after starting another command?
+- don't think so no, however some commands are a bit painful in terms of how long the response takes
+
+typing has Literal[] type for sets of strings eg. 'abc', 'de'
+
+engine needs to be able to handle timings for both sides <- surely this doesn't make sense for an engine?
+
+- python chess library has internal board state + FEN/UCI move serialisation (may be good for a quick mock)
+
+nodes and pv a bit cryptic, UCI engine supposed to handle pondering. ply is just one players move
+UCI assumes a search tree, commands to do with max depth etc.
+- may be expected to calculate k best move sequences etc.
+nps <- nodes per second searched, engine needs to be able to profile itself
+
+do any engine options have to be supported? <- yes there are standard options
+- interestingly wouldn't need an opening book if have a smart enough GUI as GUI would make
+first moves itself.
+
+ignoring actually parsing the commands from given lines how difficult would it be to represent them as objects?
+are any commands deeply nested or using weird types. No believe each command only has one level of "subcommands"
+- assumedly moves and fenstrings should just be stored as strings rather than some special type.
+- maybe each command object knows how to serialise itself (deserialisation is a bit nasty due to validation)
+- how would deserialisation work? <- I guess each command knows all of its subcommand names in advance so could
+split the line into chunks based on those subcommands (not assuming any order) eg.
+CMD [SUBCMD ARG ARG ARG ARG] [SUBCMD ARG ARG]
+- this will break down if the commands that accept a string allow spaces in that string
+info string NNUE evaluation using nn-13406b1dcbe0.nnue enabled (still safe here as this must terminate the command)
+
+(some subcommands are optional / mutually exclusive)
+- how many possibilities are there for the number of arguments of a cmd|subcmd / argument types?
+- info currline is a nasty special case, info currline [<int>] <move1> ... <movei> (one argument is of different type)
+arg_types: int, positive_int, move, fen_string, option_id?, specialised_enum (option type <t>), string (also good if don't know
+the type)
+- with one exception (info currline) all commands accept 0, 1 or a variable number of same type arguments
+(maybe specify a required lower and optional upper bound for the number of arguments and a type to handle this)
+[not really sure should call the options subcommands, maybe arguments or something]
+
+# surely there's a better name for this
+Argument <- name, min_args, max_args, arg_type, from_line(str)
+ArgumentType <- validate(str) method or something
+
+
+
+
+flow:
+HANDSHAKE
+-> uci
+<- id name X
+<- id author Y
+<-repeat- option ...
+<- uciok [ REQUIRED AFTER uci ]
+-repeat-> setoption ...
+-> isready
+<- readyok [ REQUIRED AFTER isready - like a ping or something ]
+-> ucinewgame
+-> position ...
+MAIN LOOP
+-> go
+<- info ...
+[-> stop]
+<- bestmove ...   [ REQUIRED AFTER go, USED TO DETERMINE WHEN DONE ]
+MAIN LOOP END
