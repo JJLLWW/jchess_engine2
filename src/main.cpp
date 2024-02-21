@@ -10,5 +10,6 @@ int main() {
     };
     jchess::uci_loop(iss, handler);
     jchess::FEN fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    jchess::Move move = "a7a8q";
     int i = 2;
 }

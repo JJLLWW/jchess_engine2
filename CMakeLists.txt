@@ -7,4 +7,6 @@ add_executable(untitled4 src/main.cpp
     src/jchess/core.cpp
     src/jchess/core.h
     src/jchess/uci.cpp
-    src/jchess/uci.h)
+    src/jchess/uci.h
+    src/jchess/bitboard.cpp
+    src/jchess/bitboard.h)
