@@ -62,6 +62,7 @@ namespace jchess {
         Square source;
         Square dest;
         std::optional<Piece> promotion;
+        std::optional<Piece> drop; // used to implement inverse moves.
         bool is_null = false;
     };
 }

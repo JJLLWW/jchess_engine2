@@ -124,7 +124,7 @@ namespace jchess {
             source = square_from_alg_not(uci_move.substr(0, 2));
             dest = square_from_alg_not(uci_move.substr(2, 2));
             if(uci_move.size() == 5) {
-                promotion = Piece(uci_move[4]);
+                promotion = piece_from_char(uci_move[4]);
             }
         }
     }

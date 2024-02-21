@@ -11,7 +11,8 @@ int main() {
     jchess::uci_loop(iss, handler);
     jchess::FEN fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     jchess::Board board{fen};
-    std::string str = board.to_string();
-    std::cout << str << std::endl;
+    std::cout << board.to_string() << std::endl;
+    board.make_move(jchess::Move("a2a4Q"));
+    std::cout << board.to_string() << std::endl;
     int i = 2;
 }

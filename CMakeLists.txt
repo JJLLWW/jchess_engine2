@@ -3,10 +3,13 @@ project(untitled4)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(untitled4 src/main.cpp
+add_library(chess_lib STATIC
     src/jchess/core.cpp
-    src/jchess/core.h
     src/jchess/uci.cpp
-    src/jchess/uci.h
     src/jchess/bitboard.cpp
-    src/jchess/bitboard.h)
+    src/jchess/board.cpp
+)
+target_include_directories(chess_lib PUBLIC src)
+
+add_executable(untitled4 src/main.cpp)
+target_link_libraries(untitled4 PRIVATE chess_lib)
