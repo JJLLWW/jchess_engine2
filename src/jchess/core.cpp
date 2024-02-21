@@ -6,7 +6,6 @@
 
 #include <sstream>
 #include <cassert>
-#include <iostream>
 #include <vector>
 
 
@@ -25,20 +24,24 @@ namespace jchess {
             return words;
         }
     }
-    Square from_rank_and_file(int rank, int file) {
-        assert(0 <= rank && rank < 8 && 0 <= file && file < 8);
-        return rank*8 + file;
-    }
-    Square from_alg_not(std::string const& alg_not) {
+    Square Square::from_alg_not(std::string const& alg_not) {
         if(alg_not.size() != 2) {
             throw std::invalid_argument("expecting a3, b7 format for squares");
         }
         int rank = alg_not[0] - 'a', file = alg_not[1] - '1';
-        return from_rank_and_file(rank, file);
+        return {rank, file};
     }
 
-    std::unordered_map<Square, Piece> read_fen_pieces(std::string const& pieces) {
-        std::unordered_map<Square, Piece> piece_map;
+    Piece piece_from_fen_char(char c) {
+        assert(fen_piece_chars.find(c) != std::string::npos);
+        bool is_white = isupper(c);
+        auto lower_c = static_cast<char>(tolower(c));
+        auto type = static_cast<PieceType>(lower_c);
+        return {type, is_white};
+    }
+
+    std::vector<std::pair<Square, Piece>> read_fen_pieces(std::string const& pieces) {
+        std::vector<std::pair<Square, Piece>> fen_pieces;
         int rank = 7, file = 0;
         for(char c : pieces) {
             if(isnumber(c)) {
@@ -47,17 +50,14 @@ namespace jchess {
                 --rank;
                 file = 0;
             } else {
-                auto type = static_cast<PieceType>(tolower(c));
-                Square square = from_rank_and_file(rank, file);
-                piece_map[square] = Piece {type, static_cast<bool>(isupper(c)) };
+                fen_pieces.emplace_back(Square(rank, file), piece_from_fen_char(c));
                 ++file;
             }
         }
-        return piece_map;;
+        return fen_pieces;
     }
 
-    FEN fen_from_string(std::string const& fen_string) {
-        FEN fen;
+    FEN::FEN(std::string const& fen_string) {
         if(fen_string.size() > 500) {
             throw std::invalid_argument("input fen too long (> 500 chars)");
         }
@@ -65,18 +65,22 @@ namespace jchess {
         if(fields.size() != 6) {
             throw std::invalid_argument("input fen does not have 6 fields");
         }
-        fen.pieces = read_fen_pieces(fields[0]);
-        fen.is_white_turn = fields[1] == "w";
+        pieces = read_fen_pieces(fields[0]);
+        is_white_turn = fields[1] == "w";
         for(char c : fields[2]) {
             if(castle_bit_of.count(c) > 0) {
-                fen.castle_right_mask |= castle_bit_of[c];
+                castle_right_mask |= castle_bit_of[c];
             }
         }
         if(fields[3] != "-") {
-            fen.enp_square = from_alg_not(fields[3]);
+            enp_square = Square::from_alg_not(fields[3]);
         }
-        fen.half_moves = std::stoi(fields[4]);
-        fen.full_moves = std::stoi(fields[5]);
-        return fen;
+        half_moves = std::stoi(fields[4]);
+        full_moves = std::stoi(fields[5]);
+    }
+
+    Square::Square(int rank, int file) {
+        assert(0 <= rank && rank < 8 && 0 <= file && file < 8);
+        _square = rank*8 + file;
     }
 }

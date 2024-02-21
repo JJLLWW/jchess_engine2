@@ -43,7 +43,7 @@ namespace jchess {
         bool infinite = false;
     };
     using UciCommand = std::variant<UciNoArgCmd, UciSetOption, UciPosition, UciGo>;
-    UciCommand read_command(std::string const& command);
+    std::optional<UciCommand> read_command(std::string const& command);
     void uci_loop(std::istream& input, std::function<void(UciCommand)> const& cmd_handler);
     UciSetOption read_setoption_args(std::istringstream& tokens);
     UciPosition read_position_args(std::istringstream& tokens);

@@ -9,6 +9,6 @@ int main() {
         cmds.push_back(cmd);
     };
     jchess::uci_loop(iss, handler);
-    jchess::FEN fen = jchess::fen_from_string("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    jchess::FEN fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     int i = 2;
 }

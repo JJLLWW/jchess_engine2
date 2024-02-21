@@ -91,7 +91,7 @@ namespace jchess {
         return args;
     }
 
-    UciCommand read_command(std::string const& command) {
+    std::optional<UciCommand> read_command(std::string const& command) {
         std::istringstream tokens{command};
         std::string token;
         std::unordered_map<std::string, UciNoArgCmd> no_arg_cmds {
@@ -119,6 +119,7 @@ namespace jchess {
                 return read_go_args(tokens);
             }
         }
+        return std::nullopt;
     }
 
     bool is_quit(UciCommand const& command) {
@@ -128,10 +129,12 @@ namespace jchess {
     void uci_loop(std::istream& input, std::function<void(UciCommand)> const& cmd_handler) {
         std::string line;
         while(std::getline(input, line)) {
-            UciCommand cmd = read_command(line);
-            cmd_handler(cmd);
-            if(is_quit(cmd)) {
-                return;
+            auto cmd = read_command(line);
+            if(cmd) {
+                cmd_handler(cmd.value());
+                if (is_quit(cmd.value())) {
+                    return;
+                }
             }
         }
     }
