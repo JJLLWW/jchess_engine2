@@ -1,12 +1,11 @@
-//
-// Created by Jack Wright on 21/02/2024.
-//
+#pragma once
 
-#ifndef UNTITLED4_BITBOARD_H
-#define UNTITLED4_BITBOARD_H
-
-#endif //UNTITLED4_BITBOARD_H
+#include "core.h"
 
 #include <cstdint>
 
-using Bitboard = uint64_t;
+namespace jchess {
+    using Bitboard = uint64_t;
+    void bb_add_square(Bitboard& bb, Square square);
+    void bb_remove_square(Bitboard& bb, Square square);
+}
