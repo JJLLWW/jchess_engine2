@@ -11,4 +11,7 @@ namespace jchess {
     void bb_remove_square(Bitboard& bb, Square square) {
         bb &= ~(1 << square);
     }
+    bool bb_get_square(Bitboard& bb, Square square) {
+        return bb & (1 << square);
+    }
 }

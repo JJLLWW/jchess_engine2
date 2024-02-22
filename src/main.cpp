@@ -14,5 +14,7 @@ int main() {
     std::cout << board.to_string() << std::endl;
     board.make_move(jchess::Move("a2a4Q"));
     std::cout << board.to_string() << std::endl;
+    board.unmake_move();
+    std::cout << board.to_string() << std::endl;
     int i = 2;
 }

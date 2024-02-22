@@ -8,6 +8,7 @@ add_library(chess_lib STATIC
     src/jchess/uci.cpp
     src/jchess/bitboard.cpp
     src/jchess/board.cpp
+    src/jchess/movegen.cpp
 )
 target_include_directories(chess_lib PUBLIC src)
 

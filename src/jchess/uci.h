@@ -9,7 +9,6 @@
 
 
 namespace jchess {
-    // is variant based polymorphism a good idea here?
     enum class UciNoArgCmd {
         UCI, DEBUG, ISREADY, REGISTER, UCINEWGAME, STOP, PONDERHIT, QUIT
     };

@@ -115,11 +115,12 @@ namespace jchess {
     }
 
     Move::Move(const std::string &uci_move) {
+        // castling is sent as if e1g1 so this does handle castling
         if(uci_move.size() > 5 || uci_move.size() < 4) {
             throw std::invalid_argument("uci move string is wrong length");
         }
         if(uci_move == "0000") {
-            is_null = true;
+            is_null_move = true;
         } else {
             source = square_from_alg_not(uci_move.substr(0, 2));
             dest = square_from_alg_not(uci_move.substr(2, 2));
@@ -127,5 +128,49 @@ namespace jchess {
                 promotion = piece_from_char(uci_move[4]);
             }
         }
+    }
+
+    UnMove::UnMove(int castle_rights, std::optional<Square> enp)
+        : castle_right_mask{castle_rights}, enp_state{enp} {}
+
+    UnMove::UnMove(int castle_rights, std::optional<Square> enp, CastleBits castle_type)
+        : castle_right_mask{castle_rights}, enp_state{enp} {
+        // surely a better way here
+        switch(castle_type) {
+            case WHITE_KS:
+                add_clear_square(F1);
+                add_clear_square(G1);
+                add_place_piece(E1, W_KING);
+                add_place_piece(H1, W_ROOK);
+                break;
+            case WHITE_QS:
+                add_clear_square(C1);
+                add_clear_square(D1);
+                add_place_piece(E1, W_KING);
+                add_place_piece(A1, W_ROOK);
+                break;
+            case BLACK_KS:
+                add_clear_square(F8);
+                add_clear_square(G8);
+                add_place_piece(E8, W_KING);
+                add_place_piece(H8, W_ROOK);
+                break;
+            case BLACK_QS:
+                add_clear_square(C8);
+                add_clear_square(D8);
+                add_place_piece(E8, W_KING);
+                add_place_piece(A8, W_ROOK);
+                break;
+        }
+    }
+
+    void UnMove::add_clear_square(jchess::Square square) {
+        clear_squares[num_clear++] = square;
+    }
+
+    void UnMove::add_place_piece(jchess::Square square, jchess::Piece piece) {
+        place_squares[num_place] = square;
+        place_pieces[num_place] = piece;
+        num_place++;
     }
 }

@@ -18,12 +18,15 @@ namespace jchess {
     enum Piece {
         W_PAWN, W_ROOK, W_KNIGHT, W_BISHOP, W_KING, W_QUEEN,
         B_PAWN, B_ROOK, B_KNIGHT, B_BISHOP, B_KING, B_QUEEN,
-        NO_PIECE // maybe mistake
+        NO_PIECE
     };
 
     Piece piece_from_char(char c);
     char char_from_piece(Piece piece);
     Color color_from_piece(Piece piece);
+
+    // this may be a mistake
+    enum Direction { LEFT = -1, RIGHT = 1, UP = 8, DOWN = -8 };
 
     enum Square {
         A1, B1, C1, D1, E1, F1, G1, H1,
@@ -61,8 +64,24 @@ namespace jchess {
         Move(std::string const& uci_move);
         Square source;
         Square dest;
-        std::optional<Piece> promotion;
-        std::optional<Piece> drop; // used to implement inverse moves.
-        bool is_null = false;
+        Piece promotion = NO_PIECE;
+        bool is_null_move;
+    };
+
+    // if this thing has state modification functions surely its attributes should be private.
+    struct UnMove {
+        UnMove() = default;
+        UnMove(int castle_rights, std::optional<Square> enp);
+        UnMove(int castle_rights, std::optional<Square> enp, CastleBits castle);
+        void add_clear_square(Square square);
+        void add_place_piece(Square square, Piece piece);
+        int num_clear = 0;
+        int num_place = 0;
+        // use std::arrays for copy ctor
+        std::array<Square, 2> clear_squares;
+        std::array<Square, 2> place_squares;
+        std::array<Piece, 2> place_pieces;
+        std::optional<Square> enp_state;
+        int castle_right_mask = 0;
     };
 }
