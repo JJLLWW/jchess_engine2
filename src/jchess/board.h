@@ -4,6 +4,7 @@
 #include "bitboard.h"
 
 namespace jchess {
+    // shouldn't these methods just be private methods of Board?
     struct GameState {
         GameState() = default;
         GameState(FEN const& fen);
@@ -14,7 +15,6 @@ namespace jchess {
         Color side_to_move = WHITE;
     };
 
-    // the variables here should probably be private, don't want user to corrupt the bitboards.
     class Board {
     public:
         Board(FEN const& fen) { set_position(fen); }
@@ -23,10 +23,10 @@ namespace jchess {
         void make_move(Move const& move);
         bool unmake_move();
         std::string to_string();
+    private:
         GameState game_state;
         int castle_right_mask = WHITE_QS | WHITE_KS | BLACK_QS | BLACK_KS;
         std::optional<Square> enp_square;
-        // pieces
         std::array<Piece, 64> pieces;
         std::array<Bitboard, 12> piece_bbs; // one for white pawns, black kings etc.
         std::array<Bitboard, 2> color_bbs; // all white and black pieces

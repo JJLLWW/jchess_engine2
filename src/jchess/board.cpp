@@ -62,7 +62,7 @@ namespace jchess {
     }
 
     std::optional<CastleBits> Board::get_move_castle_type(const Move &move) {
-        // this is wrong
+        // better way?
         Piece src_piece = pieces[move.source];
         if(src_piece == W_KING) {
             if(move.source == E1 && move.dest == G1 && pieces[H1] == W_ROOK) {
@@ -82,7 +82,7 @@ namespace jchess {
     }
 
     std::optional<Square> Board::get_new_enp_square(Move const& move) {
-        // this can definitely be cleaned up
+        // better way?
         if(pieces[move.source] == W_PAWN) {
             if(move.dest - move.source == 2 * UP) {
                 return static_cast<Square>(move.source + UP);
