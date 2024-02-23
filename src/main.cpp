@@ -2,20 +2,12 @@
 #include "jchess/uci.h"
 #include "jchess/board.h"
 
+using namespace jchess;
+
 int main() {
-    std::istringstream iss{"uci\n isready\n quit"};
-    std::vector<jchess::UciCommand> cmds;
-    auto handler = [&cmds](jchess::UciCommand const& cmd) mutable {
-        cmds.push_back(cmd);
-    };
-    jchess::PieceType type = jchess::type_from_piece(jchess::B_ROOK);
-    jchess::uci_loop(iss, handler);
-    jchess::FEN fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    jchess::Board board{fen};
-    std::cout << board.to_string() << std::endl;
-    board.make_move(jchess::Move("a2a4Q"));
-    std::cout << board.to_string() << std::endl;
-    board.unmake_move();
-    std::cout << board.to_string() << std::endl;
+    Bitboard bb = get_rook_blocker_mask(A1);
+    auto str = bb_to_string(bb);
+    Bitboard bb2 = get_rook_blocker_mask(C4);
+    auto str2 = bb_to_string(bb2);
     int i = 2;
 }

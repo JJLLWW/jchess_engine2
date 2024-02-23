@@ -2,6 +2,7 @@
 
 #include "jchess/core.h"
 #include <unordered_map>
+#include <unordered_set>
 
 using namespace jchess;
 
@@ -22,8 +23,29 @@ TEST_CASE("Square Helpers") {
     REQUIRE(!is_corner_square(D6));
     REQUIRE(horizontal_distance(B2, E2) == 3);
     REQUIRE(vertical_distance(B2, B5) == 3);
-    REQUIRE(square_from_rank_file(2, 1) == B3);
+    REQUIRE(square_from_rank_file(2, B) == B3);
+    // 0-based rank (maybe too confusing)
+    REQUIRE(rank_file_from_square(C3) == std::array<int, 2>{2, C});
     REQUIRE(square_from_alg_not("d5") == D5);
+}
+
+TEST_CASE("Diagonals") {
+    std::unordered_set<int> seen_keys;
+    std::vector<Square> squares {A1, A2, A3, A4, A5, A6, A7, A8, B1, C1, D1, E1, F1, G1, H1};
+    for(Square square : squares) {
+        int diag_key = diagonal_from_square(square);
+        seen_keys.insert(diag_key);
+        REQUIRE((0 <= diag_key && diag_key < 16));
+    }
+    REQUIRE(seen_keys.size() == 15);
+    seen_keys.clear();
+    squares = {A1, A2, A3, A4, A5, A6, A7, A8, B8, C8, D8, E8, F8, G8, H8};
+    for(Square square : squares) {
+        int diag_key = antidiag_from_square(square);
+        seen_keys.insert(diag_key);
+        REQUIRE((0 <= diag_key && diag_key < 16));
+    }
+    REQUIRE(seen_keys.size() == 15);
 }
 
 TEST_CASE("Castle Bits") {

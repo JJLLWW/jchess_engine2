@@ -3,10 +3,13 @@ project(untitled4)
 
 set(CMAKE_CXX_STANDARD 20)
 
+add_executable(magics src/misc/magic_finder.c)
+
 add_library(chess_lib STATIC
     src/jchess/core.cpp
     src/jchess/uci.cpp
     src/jchess/bitboard.cpp
+    src/jchess/magic_bitboard.cpp
     src/jchess/board.cpp
     src/jchess/movegen.cpp
 )
@@ -25,7 +28,7 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(Catch2)
-add_executable(tests test/core.cpp test/board.cpp test/bitboard.cpp)
+add_executable(tests test/core.cpp test/board.cpp test/bitboard.cpp test/magic.cpp)
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain chess_lib)
 target_include_directories(tests PRIVATE src)
 

@@ -53,6 +53,10 @@ namespace jchess {
         return static_cast<Square>(rank*8 + file);
     }
 
+    bool check_rank_file(int rank, int file) {
+        return A <= file && file <= H && 0 <= rank && rank <= 7;
+    }
+
     Piece piece_from_char(char c) {
         size_t offset = piece_chars.find(c);
         if(offset == std::string::npos) {

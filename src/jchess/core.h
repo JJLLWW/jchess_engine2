@@ -30,10 +30,27 @@ namespace jchess {
     char char_from_piece(Piece piece); // DOESN'T WORK.
     Color color_from_piece(Piece piece);
 
-    // this may be a mistake
-    enum Direction { LEFT = -1, RIGHT = 1, UP = 8, DOWN = -8 };
+    // luckily these numeric values are only used once
+    enum Direction {
+        WEST, EAST, NORTH, SOUTH,
+        NWEST, NEAST, SWEST, SEAST
+    };
+
+    const std::array<Direction, 8> arr_directions {WEST, EAST, NORTH, SOUTH, NWEST, NEAST, SWEST, SEAST};
+    const int offset_of_dir[8] = {-1, 1, 8, -8, 7, 9, -9, -7 };
+    const int offsets_of_dir[8][2] = {
+        {-1, 0}, {1,0}, {0, 1}, {0, -1},
+        {-1,1}, {1, 1}, {-1,-1}, {1, -1}
+    };
+
+    constexpr bool is_negative_dir(Direction dir) {
+        return (dir == WEST) || (dir == SOUTH) || (dir == SWEST) || (dir == SEAST);
+    }
 
     using Square = int; // avoid issues with casting an enum and offset additions
+
+    enum File { A, B, C, D, E, F, G, H };
+    enum Rank { RANK_1, RANk_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8 };
 
     enum Squares {
         A1, B1, C1, D1, E1, F1, G1, H1,
@@ -49,8 +66,26 @@ namespace jchess {
     bool is_corner_square(Square square);
     int horizontal_distance(Square sq1, Square sq2);
     int vertical_distance(Square sq1, Square sq2);
+    bool check_rank_file(int rank, int file);
     Square square_from_rank_file(int rank, int file);
+
+    constexpr std::array<int, 2> rank_file_from_square(Square square) {
+        int rank = square / 8;
+        int file = square % 8;
+        return {rank, file};
+    }
+
     Square square_from_alg_not(std::string const& alg_not);
+
+    constexpr int diagonal_from_square(Square square) {
+        auto [rank, file] = rank_file_from_square(square);
+        return (rank - file) + 7;
+    }
+
+    constexpr int antidiag_from_square(Square square) {
+        auto [rank, file] = rank_file_from_square(square);
+        return (rank + file);
+    }
 
     enum CastleBits { WHITE_KS = 1, WHITE_QS = 2, BLACK_KS = 4, BLACK_QS = 8 };
 

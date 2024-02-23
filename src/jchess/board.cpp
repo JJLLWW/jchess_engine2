@@ -72,11 +72,11 @@ namespace jchess {
         // moves that change the enp state or castle rights from the previous
         if(type_from_piece(src_piece) == PAWN && move.dest == current.enp_square) {
             // enp capture - involves a capture not at move.dest
-            Square enp_capture_square = move.dest + ((side_to_move == WHITE) ? DOWN : UP);
+            Square enp_capture_square = move.dest + ((side_to_move == WHITE) ? offset_of_dir[SOUTH] : offset_of_dir[NORTH]);
             next_state.remove_piece_from_square(enp_capture_square);
         } else if(type_from_piece(src_piece) == PAWN && vertical_distance(move.source, move.dest) == 2) {
             // double pawn push - creates enp square
-            next_state.enp_square = move.source + ((side_to_move == WHITE) ? UP : DOWN);
+            next_state.enp_square = move.source + ((side_to_move == WHITE) ? offset_of_dir[NORTH] : offset_of_dir[SOUTH]);
         } else if(type_from_piece(src_piece) == KING) {
             // king moves - king can no longer castle + castling involves moving associated rook
             next_state.castle_right_mask = 0;
