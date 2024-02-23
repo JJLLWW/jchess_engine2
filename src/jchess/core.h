@@ -13,19 +13,21 @@ namespace jchess {
     const std::string piece_chars = "PRNBKQprnbkq";
     const std::string castle_bits = "KQkq";
 
-    enum Color { WHITE = 0, BLACK = 8 };
+    using Bitboard = uint64_t;
+
+    enum Color { WHITE, BLACK };
 
     enum PieceType { PAWN, ROOK, KNIGHT, BISHOP, KING, QUEEN };
 
     enum Piece {
         W_PAWN, W_ROOK, W_KNIGHT, W_BISHOP, W_KING, W_QUEEN,
-        B_PAWN = 8, B_ROOK = 9, B_KNIGHT = 10, B_BISHOP = 11, B_KING = 12, B_QUEEN = 13,
-        NO_PIECE = 666
+        B_PAWN, B_ROOK, B_KNIGHT, B_BISHOP, B_KING, B_QUEEN,
+        NO_PIECE = 64
     };
 
     PieceType type_from_piece(Piece piece);
-    Piece piece_from_char(char c);
-    char char_from_piece(Piece piece);
+    Piece piece_from_char(char c); // DOESN'T WORK
+    char char_from_piece(Piece piece); // DOESN'T WORK.
     Color color_from_piece(Piece piece);
 
     // this may be a mistake
@@ -67,8 +69,6 @@ namespace jchess {
         std::vector<std::pair<Square, Piece>> read_fen_pieces(std::string const& pieces);
     };
 
-    // uci moves are in a "stateless" format, however at the point where you actually know the
-    // state of the board, surely you can get moves in a much easier to use format.
     struct Move {
         Move(const char *uci_move) : Move(std::string(uci_move)) {}
         Move(std::string const& uci_move);

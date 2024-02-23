@@ -25,9 +25,9 @@ namespace jchess {
         int castle_right_mask = WHITE_QS | WHITE_KS | BLACK_QS | BLACK_KS;
         std::optional<Square> enp_square;
         std::array<Piece, 64> pieces;
-        std::array<Bitboard, 12> piece_bbs; // one for white pawns, black kings etc.
-        std::array<Bitboard, 2> color_bbs; // all white and black pieces
-        Bitboard all_pieces_bb;
+        std::array<Bitboard, 12> piece_bbs = {}; // one for white pawns, black kings etc.
+        std::array<Bitboard, 2> color_bbs = {}; // all white and black pieces
+        Bitboard all_pieces_bb = 0;
     };
 
     BoardState get_state_after_move(BoardState const& current, Move const& move);
@@ -40,6 +40,7 @@ namespace jchess {
         void set_position(FEN const& fen);
         void make_move(Move const& move);
         bool unmake_move();
+        std::vector<Move> get_legal_moves();
         std::string to_string();
     private:
         GameState game_state;

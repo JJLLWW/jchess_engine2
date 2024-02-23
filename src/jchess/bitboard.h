@@ -6,12 +6,11 @@
 #include <array>
 
 namespace jchess {
-    using Bitboard = uint64_t;
-
     // all these potential attack squares are independent of the state of the board
     // apparently it is possible to precompute sliding piece lines with blockers using "magic" bitboards.
     // https://www.chessprogramming.org/Magic_Bitboards
-    // - this might be too complicated for now
+    // - this might be too complicated for now - is there a stupid slow method for getting the sliding
+    // bitboards.
     std::array<Bitboard, 64> compute_all_king_attacks();
     std::array<Bitboard, 64> compute_all_knight_attacks();
     std::array<Bitboard, 64> compute_all_pawn_attacks(Color color);

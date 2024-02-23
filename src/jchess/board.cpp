@@ -1,4 +1,5 @@
 #include "board.h"
+#include "movegen.h"
 
 #include <sstream>
 #include <numeric>
@@ -56,8 +57,8 @@ namespace jchess {
             pieces[square] = piece;
             bb_add_square(piece_bbs[piece], square);
         }
-        color_bbs[WHITE] = std::reduce(piece_bbs.begin(), piece_bbs.begin() + 6, 0, std::bit_or<int>{});
-        color_bbs[BLACK] = std::reduce(piece_bbs.begin() + 6, piece_bbs.end(), 0, std::bit_or<int>{});
+        color_bbs[WHITE] = std::reduce(piece_bbs.begin(), piece_bbs.begin() + 6, 0ull, std::bit_or<uint64_t>{});
+        color_bbs[BLACK] = std::reduce(piece_bbs.begin() + 6, piece_bbs.end(), 0ull, std::bit_or<uint64_t>{});
         all_pieces_bb = color_bbs[WHITE] | color_bbs[BLACK];
     }
 
@@ -71,11 +72,11 @@ namespace jchess {
         // moves that change the enp state or castle rights from the previous
         if(type_from_piece(src_piece) == PAWN && move.dest == current.enp_square) {
             // enp capture - involves a capture not at move.dest
-            Square enp_capture_square = move.dest + (side_to_move == WHITE) ? DOWN : UP;
+            Square enp_capture_square = move.dest + ((side_to_move == WHITE) ? DOWN : UP);
             next_state.remove_piece_from_square(enp_capture_square);
         } else if(type_from_piece(src_piece) == PAWN && vertical_distance(move.source, move.dest) == 2) {
             // double pawn push - creates enp square
-            next_state.enp_square = move.source + (side_to_move == WHITE) ? UP : DOWN;
+            next_state.enp_square = move.source + ((side_to_move == WHITE) ? UP : DOWN);
         } else if(type_from_piece(src_piece) == KING) {
             // king moves - king can no longer castle + castling involves moving associated rook
             next_state.castle_right_mask = 0;
@@ -158,6 +159,10 @@ namespace jchess {
         prev_board_states.pop();
         game_state.decrease_half_move();
         return true;
+    }
+
+    std::vector<Move> Board::get_legal_moves() {
+        return generate_legal_moves(board_state, game_state.side_to_move);
     }
 
     std::string Board::to_string() {

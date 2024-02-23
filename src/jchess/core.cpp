@@ -63,10 +63,12 @@ namespace jchess {
     }
 
     PieceType type_from_piece(Piece piece) {
-        return static_cast<PieceType>(piece & 0x111);
+        assert(piece != NO_PIECE);
+        return static_cast<PieceType>((piece > 5) ? piece - 6 : piece);
     }
 
     char char_from_piece(Piece piece) {
+        // evil implementation
         if(piece == NO_PIECE) {
             return ' ';
         } else {

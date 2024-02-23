@@ -18,13 +18,13 @@ namespace jchess {
         }
     }
     void bb_add_square(Bitboard& bb, Square square) {
-        bb |= (1 << square);
+        bb |= (1ull << square);
     }
     void bb_remove_square(Bitboard& bb, Square square) {
-        bb &= ~(1 << square);
+        bb &= ~(1ull << square);
     }
     bool bb_get_square(Bitboard& bb, Square square) {
-        return bb & (1 << square);
+        return bb & (1ull << square);
     }
 
     Bitboard bb_south_one (Bitboard b) {return  b >> 8;}
@@ -47,7 +47,7 @@ namespace jchess {
     std::array<Bitboard, 64> compute_all_king_attacks() {
         std::array<Bitboard, 64> attacks{};
         for(int i=0; i<64; ++i) {
-            attacks[i] = get_king_attacks(1 << i);
+            attacks[i] = get_king_attacks(1ull << i);
         }
         return attacks;
     }
@@ -60,7 +60,7 @@ namespace jchess {
             for(int jump : knight_jumps) {
                 int dest = i + jump;
                 if(0 <= dest && dest < 64) {
-                    attacks[i] |= (1 << dest);
+                    attacks[i] |= (1ull << dest);
                 }
             }
         }
@@ -70,7 +70,7 @@ namespace jchess {
     std::array<Bitboard, 64> compute_all_pawn_attacks(Color color) {
         std::array<Bitboard, 64> attacks{};
         for(int i=0; i<64; ++i) {
-            attacks[i] = get_pawn_attacks((1 << i), color);
+            attacks[i] = get_pawn_attacks((1ull << i), color);
         }
         return attacks;
     }
