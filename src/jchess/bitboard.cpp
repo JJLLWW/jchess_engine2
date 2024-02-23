@@ -44,7 +44,7 @@ namespace jchess {
     }
 
     // implement the pre-computation functions in stupid/unoptimised way as only called once.
-    std::array<Bitboard, 64> precompute_king_attacks() {
+    std::array<Bitboard, 64> compute_all_king_attacks() {
         std::array<Bitboard, 64> attacks{};
         for(int i=0; i<64; ++i) {
             attacks[i] = get_king_attacks(1 << i);
@@ -52,7 +52,7 @@ namespace jchess {
         return attacks;
     }
 
-    std::array<Bitboard, 64> precompute_knight_attacks() {
+    std::array<Bitboard, 64> compute_all_knight_attacks() {
         std::array<Bitboard, 64> attacks{};
         std::fill(attacks.begin(), attacks.end(), 0);
         int knight_jumps[8] = { 10, 17, 15, 6, -10, -17, -15, -6 };
@@ -67,7 +67,7 @@ namespace jchess {
         return attacks;
     }
 
-    std::array<Bitboard, 64> precompute_pawn_attacks(Color color) {
+    std::array<Bitboard, 64> compute_all_pawn_attacks(Color color) {
         std::array<Bitboard, 64> attacks{};
         for(int i=0; i<64; ++i) {
             attacks[i] = get_pawn_attacks((1 << i), color);

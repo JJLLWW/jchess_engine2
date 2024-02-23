@@ -24,6 +24,22 @@ namespace jchess {
         }
     }
 
+    bool is_corner_square(Square square) {
+        return square == A1 || square == A8 || square == H1 || square == H8;
+    }
+
+    int horizontal_distance(Square sq1, Square sq2) {
+        int xpos1 = sq1 % 8;
+        int xpos2 = sq2 % 8;
+        return abs(xpos1 - xpos2);
+    }
+
+    int vertical_distance(Square sq1, Square sq2) {
+        int ypos1 = sq1 / 8;
+        int ypos2 = sq2 / 8;
+        return abs(ypos1 - ypos2);
+    }
+
     Square square_from_alg_not(std::string const& alg_not) {
         if(alg_not.size() != 2) {
             throw std::invalid_argument("expecting a3, b7 format for squares");
@@ -44,6 +60,10 @@ namespace jchess {
             throw std::invalid_argument(message);
         }
         return static_cast<Piece>(offset);
+    }
+
+    PieceType type_from_piece(Piece piece) {
+        return static_cast<PieceType>(piece & 0x111);
     }
 
     char char_from_piece(Piece piece) {
@@ -128,49 +148,5 @@ namespace jchess {
                 promotion = piece_from_char(uci_move[4]);
             }
         }
-    }
-
-    UnMove::UnMove(int castle_rights, std::optional<Square> enp)
-        : castle_right_mask{castle_rights}, enp_state{enp} {}
-
-    UnMove::UnMove(int castle_rights, std::optional<Square> enp, CastleBits castle_type)
-        : castle_right_mask{castle_rights}, enp_state{enp} {
-        // surely a better way here
-        switch(castle_type) {
-            case WHITE_KS:
-                add_clear_square(F1);
-                add_clear_square(G1);
-                add_place_piece(E1, W_KING);
-                add_place_piece(H1, W_ROOK);
-                break;
-            case WHITE_QS:
-                add_clear_square(C1);
-                add_clear_square(D1);
-                add_place_piece(E1, W_KING);
-                add_place_piece(A1, W_ROOK);
-                break;
-            case BLACK_KS:
-                add_clear_square(F8);
-                add_clear_square(G8);
-                add_place_piece(E8, W_KING);
-                add_place_piece(H8, W_ROOK);
-                break;
-            case BLACK_QS:
-                add_clear_square(C8);
-                add_clear_square(D8);
-                add_place_piece(E8, W_KING);
-                add_place_piece(A8, W_ROOK);
-                break;
-        }
-    }
-
-    void UnMove::add_clear_square(jchess::Square square) {
-        clear_squares[num_clear++] = square;
-    }
-
-    void UnMove::add_place_piece(jchess::Square square, jchess::Piece piece) {
-        place_squares[num_place] = square;
-        place_pieces[num_place] = piece;
-        num_place++;
     }
 }

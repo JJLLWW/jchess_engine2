@@ -28,27 +28,27 @@ namespace jchess {
         side_to_move = (side_to_move == WHITE) ? BLACK : WHITE;
     }
 
-    void Board::remove_piece_from_square(Square square) {
-        Piece piece = pieces[square];
-        assert(piece != NO_PIECE);
-        Color piece_color = color_from_piece(piece);
-        bb_remove_square(all_pieces_bb, square);
-        bb_remove_square(color_bbs[piece_color], square);
-        bb_remove_square(piece_bbs[piece], square);
-        pieces[square] = NO_PIECE;
+    std::optional<CastleBits> get_move_castle_type(BoardState const& state, Move const& move) {
+        // better way?
+        Piece src_piece = state.pieces[move.source];
+        if(src_piece == W_KING) {
+            if(move.source == E1 && move.dest == G1 && state.pieces[H1] == W_ROOK) {
+                return WHITE_KS;
+            } else if(move.source == E1 && move.dest == C1 && state.pieces[A1] == W_ROOK) {
+                return WHITE_QS;
+            }
+        }
+        if(src_piece == B_KING) {
+            if(move.source == E8 && move.dest == G8 && state.pieces[H8] == B_ROOK) {
+                return BLACK_KS;
+            } else if(move.source == E8 && move.dest == C8 && state.pieces[A8] == B_ROOK) {
+                return BLACK_QS;
+            }
+        }
+        return std::nullopt;
     }
 
-    void Board::place_piece_on_square(Piece piece, Square square) {
-        Color piece_color = color_from_piece(piece);
-        bb_add_square(all_pieces_bb, square);
-        bb_add_square(color_bbs[piece_color], square);
-        bb_add_square(piece_bbs[piece], square);
-        pieces[square] = piece;
-    }
-
-    void Board::set_position(const FEN &fen) {
-        // TODO: cleanup.
-        game_state = GameState(fen);
+    BoardState::BoardState(FEN const& fen) {
         castle_right_mask = fen.castle_right_mask;
         enp_square = fen.enp_square;
         std::fill(pieces.begin(), pieces.end(), NO_PIECE);
@@ -61,168 +61,102 @@ namespace jchess {
         all_pieces_bb = color_bbs[WHITE] | color_bbs[BLACK];
     }
 
-    std::optional<CastleBits> Board::get_move_castle_type(const Move &move) {
-        // better way?
-        Piece src_piece = pieces[move.source];
-        if(src_piece == W_KING) {
-            if(move.source == E1 && move.dest == G1 && pieces[H1] == W_ROOK) {
-                return WHITE_KS;
-            } else if(move.source == E1 && move.dest == C1 && pieces[A1] == W_ROOK) {
-                return WHITE_QS;
+    // it may be worth decomposing this into private helpers.
+    BoardState get_state_after_move(BoardState const& current, Move const& move) {
+        BoardState next_state = current;
+        next_state.enp_square = std::nullopt; // no enp square unless a double pawn push.
+        Piece src_piece = current.pieces[move.source];
+        Color side_to_move = color_from_piece(src_piece);
+
+        // moves that change the enp state or castle rights from the previous
+        if(type_from_piece(src_piece) == PAWN && move.dest == current.enp_square) {
+            // enp capture - involves a capture not at move.dest
+            Square enp_capture_square = move.dest + (side_to_move == WHITE) ? DOWN : UP;
+            next_state.remove_piece_from_square(enp_capture_square);
+        } else if(type_from_piece(src_piece) == PAWN && vertical_distance(move.source, move.dest) == 2) {
+            // double pawn push - creates enp square
+            next_state.enp_square = move.source + (side_to_move == WHITE) ? UP : DOWN;
+        } else if(type_from_piece(src_piece) == KING) {
+            // king moves - king can no longer castle + castling involves moving associated rook
+            next_state.castle_right_mask = 0;
+            auto castle_type = get_move_castle_type(current, move);
+            if(castle_type) {
+                switch(castle_type.value()) {
+                    case WHITE_KS:
+                        next_state.remove_piece_from_square(A8);
+                        next_state.place_piece_on_square(W_ROOK, A6);
+                        break;
+                    case WHITE_QS:
+                        next_state.remove_piece_from_square(A1);
+                        next_state.place_piece_on_square(W_ROOK, A4);
+                        break;
+                    case BLACK_KS:
+                        next_state.remove_piece_from_square(H8);
+                        next_state.place_piece_on_square(B_ROOK, H6);
+                        break;
+                    case BLACK_QS:
+                        next_state.remove_piece_from_square(H1);
+                        next_state.place_piece_on_square(B_ROOK, H4);
+                        break;
+                }
+            }
+        } else if(type_from_piece(src_piece) == ROOK && is_corner_square(move.source)) {
+            // moving a rook from a corner will change the castling rights.
+            if(move.source == A1) {
+                next_state.castle_right_mask &= ~WHITE_QS;
+            } else if(move.source == A8) {
+                next_state.castle_right_mask &= ~WHITE_KS;
+            } else if(move.source == H1) {
+                next_state.castle_right_mask &= ~BLACK_QS;
+            } else if(move.source == H8) {
+                next_state.castle_right_mask &= ~BLACK_KS;
             }
         }
-        if(src_piece == B_KING) {
-            if(move.source == E8 && move.dest == G8 && pieces[H8] == B_ROOK) {
-                return BLACK_KS;
-            } else if(move.source == E8 && move.dest == C8 && pieces[A8] == B_ROOK) {
-                return BLACK_QS;
-            }
-        }
-        return std::nullopt;
+
+        // handle moving the piece and possible promotions.
+        Piece dest_piece = move.promotion == NO_PIECE ? src_piece : move.promotion;
+        next_state.remove_piece_from_square(move.source);
+        next_state.place_piece_on_square(dest_piece, move.dest);
+        return next_state;
     }
 
-    std::optional<Square> Board::get_new_enp_square(Move const& move) {
-        // better way?
-        if(pieces[move.source] == W_PAWN) {
-            if(move.dest - move.source == 2 * UP) {
-                return static_cast<Square>(move.source + UP);
-            }
-        } else if(pieces[move.source] == B_PAWN) {
-            ;if(move.dest - move.source == 2 * DOWN) {
-                return static_cast<Square>(move.source + DOWN);
-            }
+    void BoardState::remove_piece_from_square(Square square) {
+        Piece piece = pieces[square];
+        if(piece != NO_PIECE) {
+            Color piece_color = color_from_piece(piece);
+            bb_remove_square(all_pieces_bb, square);
+            bb_remove_square(color_bbs[piece_color], square);
+            bb_remove_square(piece_bbs[piece], square);
+            pieces[square] = NO_PIECE;
         }
-        return std::nullopt;
     }
 
-    void Board::make_castle_move(CastleBits castle) {
-        Square src_king, src_rook, dest_king, dest_rook;
-        Piece king = (castle == WHITE_KS || castle == WHITE_QS) ? W_KING : B_KING;
-        Piece rook = (castle == WHITE_KS || castle == WHITE_QS) ? W_ROOK : B_ROOK;
-        // better way?
-        switch(castle) {
-            case WHITE_KS:
-                src_king = E1, dest_king = G1;
-                src_rook = H1, dest_rook = F1;
-                castle_right_mask &= ~WHITE_KS;
-                break;
-            case WHITE_QS:
-                src_king = E1, dest_king = C1;
-                src_rook = A1, dest_rook = D1;
-                castle_right_mask &= ~WHITE_QS;
-                break;
-            case BLACK_KS:
-                src_king = E8, dest_king = G8;
-                src_rook = H8, dest_rook  = F8;
-                castle_right_mask &= ~BLACK_KS;
-                break;
-            case BLACK_QS:
-                src_king = E8, dest_king = C8;
-                src_rook = A8, dest_rook = D8;
-                castle_right_mask &= ~BLACK_QS;
-                break;
-        }
-        remove_piece_from_square(src_king);
-        remove_piece_from_square(src_rook);
-        place_piece_on_square(king, dest_king);
-        place_piece_on_square(rook, dest_rook);
-        enp_square = std::nullopt;
+    void BoardState::place_piece_on_square(Piece piece, Square square) {
+        Color piece_color = color_from_piece(piece);
+        bb_add_square(all_pieces_bb, square);
+        bb_add_square(color_bbs[piece_color], square);
+        bb_add_square(piece_bbs[piece], square);
+        pieces[square] = piece;
     }
 
-    UnMove Board::get_regular_unmove(Move const& move) {
-        UnMove unmove {castle_right_mask, enp_square};
-        unmove.add_place_piece(move.source, pieces[move.source]);
-        if(pieces[move.dest] != NO_PIECE) {
-            unmove.add_place_piece(move.dest, pieces[move.dest]);
-        }
-        unmove.add_clear_square(move.dest);
-        return unmove;
-    }
-
-    void Board::make_regular_move(Move const& move) {
-        Piece src_piece = pieces[move.source], dest_piece = pieces[move.dest];
-        Piece target_piece = move.promotion != NO_PIECE ? move.promotion : src_piece;
-        remove_piece_from_square(move.source);
-        if(dest_piece != NO_PIECE) {
-            remove_piece_from_square(move.dest);
-        }
-        place_piece_on_square(target_piece, move.dest);
-        enp_square = get_new_enp_square(move);
-    }
-
-    bool Board::is_enp_capture(jchess::Move const& move) {
-        if(!enp_square) {
-            return false;
-        }
-        Piece src_piece = pieces[move.source];
-        // a pawn can't move forwards into the enp square so this is a good enough check.
-        if(src_piece == W_PAWN || src_piece == B_PAWN && enp_square.value() == move.dest) {
-            return true;
-        }
-        return false;
-    }
-
-    UnMove Board::get_enp_unmove(Move const& move) {
-        UnMove unmove {castle_right_mask, enp_square};
-        Direction capture_dir = (game_state.side_to_move == WHITE) ? DOWN : UP;
-        auto capture_square = static_cast<Square>(enp_square.value() + capture_dir);
-        unmove.add_place_piece(capture_square, pieces[capture_square]);
-        unmove.add_place_piece(move.source, pieces[move.source]);
-        unmove.add_clear_square(enp_square.value());
-        return unmove;
-    }
-
-    void Board::make_enp_move(jchess::Move const& move) {
-        assert(enp_square.has_value());
-        Direction capture_dir = (game_state.side_to_move == WHITE) ? DOWN : UP;
-        Piece source_pawn = pieces[move.source];
-        auto capture_square = static_cast<Square>(enp_square.value() + capture_dir);
-        remove_piece_from_square(capture_square);
-        remove_piece_from_square(move.source);
-        place_piece_on_square(pieces[source_pawn], enp_square.value());
-
-        enp_square = std::nullopt;
+    void Board::set_position(const FEN &fen) {
+        game_state = GameState(fen);
+        board_state = BoardState(fen);
     }
 
     void Board::make_move(jchess::Move const& move) {
-        auto castle_type = get_move_castle_type(move);
-        if(move.is_null_move) {
-            throw std::invalid_argument("null moves not supported");
-        } else if(castle_type) {
-            // this is a bit cryptic.
-            unmoves.emplace(castle_right_mask, enp_square, castle_type.value());
-            make_castle_move(castle_type.value());
-        } else if(is_enp_capture(move)) {
-            unmoves.push(get_enp_unmove(move));
-            make_enp_move(move);
-        } else {
-            unmoves.push(get_regular_unmove(move));
-            make_regular_move(move);
-        }
-
+        prev_board_states.push(board_state);
+        board_state = get_state_after_move(board_state, move);
         game_state.increase_half_move();
     }
 
-    void Board::apply_unmove(jchess::UnMove const& unmove) {
-        for(int i=0; i<unmove.num_clear; ++i) {
-            remove_piece_from_square(unmove.clear_squares[i]);
-        }
-        for(int i=0; i<unmove.num_place; ++i) {
-            place_piece_on_square(unmove.place_pieces[i], unmove.place_squares[i]);
-        }
-        castle_right_mask = unmove.castle_right_mask;
-        enp_square = unmove.enp_state;
-
-        game_state.decrease_half_move();
-    }
-
     bool Board::unmake_move() {
-        if(unmoves.empty()) {
+        if(prev_board_states.empty()) {
             return false;
         }
-        UnMove unmove = unmoves.top();
-        unmoves.pop();
-        apply_unmove(unmove);
+        board_state = prev_board_states.top();
+        prev_board_states.pop();
+        game_state.decrease_half_move();
         return true;
     }
 
@@ -230,7 +164,7 @@ namespace jchess {
         std::ostringstream oss;
         for(int rank = 7; rank >= 0; --rank) {
             for(int file = 0; file < 8; ++ file) {
-                Piece piece = pieces[square_from_rank_file(rank, file)];
+                Piece piece = board_state.pieces[square_from_rank_file(rank, file)];
                 oss << char_from_piece(piece);
             }
             oss << std::endl;
