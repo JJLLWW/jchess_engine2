@@ -40,7 +40,6 @@ namespace jchess {
         void set_position(FEN const& fen);
         void make_move(Move const& move);
         bool unmake_move();
-        std::vector<Move> get_legal_moves();
         std::string to_string();
     private:
         GameState game_state;

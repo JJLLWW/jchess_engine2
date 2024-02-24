@@ -161,10 +161,6 @@ namespace jchess {
         return true;
     }
 
-    std::vector<Move> Board::get_legal_moves() {
-        return generate_legal_moves(board_state, game_state.side_to_move);
-    }
-
     std::string Board::to_string() {
         std::ostringstream oss;
         for(int rank = 7; rank >= 0; --rank) {

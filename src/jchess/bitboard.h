@@ -35,6 +35,7 @@ namespace jchess {
     // don't implement own iterator here as this is only used for non performance
     // critical pre-computation ( <= 4096 possible subsets )
     std::vector<Bitboard> get_subsets_of_mask(Bitboard mask);
+    std::vector<Square> bb_get_squares(Bitboard bb);
 
     Bitboard get_rook_attacks_empty_board(Square square);
     Bitboard get_rook_blocker_mask(Square square);
@@ -86,7 +87,7 @@ namespace jchess {
     constexpr std::array<std::array<Bitboard, 64>, 8> initialise_ray_bbs() {
         std::array<std::array<Bitboard, 64>, 8> init{};
         for(Square sq=0; sq<64; ++sq) {
-            for(Direction d : arr_directions) {
+            for(Direction d : all_directions) {
                 const auto [dx, dy] = offsets_of_dir[d];
                 const auto [x, y] = rank_file_from_square(sq);
                 Bitboard bb = 0ull;

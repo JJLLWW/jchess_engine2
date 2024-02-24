@@ -1,12 +1,7 @@
 #include "magic_bitboard.h"
+#include "bitboard.h"
 
 namespace jchess {
-    namespace {
-        // max sizes of a single square's lookup table
-        constexpr size_t MAX_BISHOP_TBL_SZ = 512;
-        constexpr size_t MAX_ROOK_TBL_SZ = 4096;
-    }
-
     uint64_t get_bishop_index(Bitboard blockers, Square square) {
         uint64_t index = blockers * bishop_magics[square];
         int n = BBits[square];
@@ -30,12 +25,6 @@ namespace jchess {
     }
 
     MagicDatabase::MagicDatabase() {
-        for(auto& bishop_table : bishop_attacks) {
-            bishop_table.resize(MAX_BISHOP_TBL_SZ);
-        }
-        for(auto& rook_table : rook_attacks) {
-            rook_table.resize(MAX_ROOK_TBL_SZ);
-        }
         // TEMPORARY
         for(Square square = 0; square < 64; ++square) {
             // bishop table fill

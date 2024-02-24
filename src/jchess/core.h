@@ -26,22 +26,24 @@ namespace jchess {
     };
 
     PieceType type_from_piece(Piece piece);
-    Piece piece_from_char(char c); // DOESN'T WORK
-    char char_from_piece(Piece piece); // DOESN'T WORK.
+    Piece piece_from_char(char c);
+    char char_from_piece(Piece piece);
     Color color_from_piece(Piece piece);
+    Piece piece_from(PieceType type, Color color);
 
-    // luckily these numeric values are only used once
     enum Direction {
         WEST, EAST, NORTH, SOUTH,
         NWEST, NEAST, SWEST, SEAST
     };
 
-    const std::array<Direction, 8> arr_directions {WEST, EAST, NORTH, SOUTH, NWEST, NEAST, SWEST, SEAST};
+    const std::array<Direction, 8> all_directions {WEST, EAST, NORTH, SOUTH, NWEST, NEAST, SWEST, SEAST};
     const int offset_of_dir[8] = {-1, 1, 8, -8, 7, 9, -9, -7 };
     const int offsets_of_dir[8][2] = {
         {-1, 0}, {1,0}, {0, 1}, {0, -1},
         {-1,1}, {1, 1}, {-1,-1}, {1, -1}
     };
+
+    bool is_orthogonal_dir(Direction dir);
 
     constexpr bool is_negative_dir(Direction dir) {
         return (dir == WEST) || (dir == SOUTH) || (dir == SWEST) || (dir == SEAST);
@@ -107,9 +109,10 @@ namespace jchess {
     struct Move {
         Move(const char *uci_move) : Move(std::string(uci_move)) {}
         Move(std::string const& uci_move);
+        Move(Square source, Square dest) : source{source}, dest{dest} {}
         Square source;
         Square dest;
         Piece promotion = NO_PIECE;
-        bool is_null_move;
+        bool is_null_move = false;
     };
 }

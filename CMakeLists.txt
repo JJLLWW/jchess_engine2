@@ -28,7 +28,13 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(Catch2)
-add_executable(tests test/core.cpp test/board.cpp test/bitboard.cpp test/magic.cpp)
+add_executable(tests
+    test/core.cpp
+    test/board.cpp
+    test/bitboard.cpp
+    test/magic.cpp
+    test/movegen.cpp
+)
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain chess_lib)
 target_include_directories(tests PRIVATE src)
 

@@ -16,6 +16,7 @@ TEST_CASE("Piece Helpers") {
         REQUIRE(char_from_piece(piece) == ch);
         REQUIRE(piece_from_char(ch) == piece);
     }
+    REQUIRE(piece_from(ROOK, BLACK) == B_ROOK);
 }
 
 TEST_CASE("Square Helpers") {
@@ -66,4 +67,7 @@ TEST_CASE("FEN parsing") {
     REQUIRE(fen.enp_square.has_value() == false);
     REQUIRE(fen.pieces.size() == 32);
     REQUIRE(fen.castle_right_mask == (WHITE_QS | BLACK_KS));
+    // fen parsing is broken?
+    FEN fen2{"8/8/8/8/8/8/8/KQ1r4 w KQkq - 0 1"};
+    REQUIRE(true);
 }

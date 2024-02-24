@@ -40,6 +40,10 @@ namespace jchess {
         return abs(ypos1 - ypos2);
     }
 
+    bool is_orthogonal_dir(Direction dir) {
+        return (dir == NORTH) || (dir == SOUTH) || (dir == EAST) || (dir == WEST);
+    }
+
     Square square_from_alg_not(std::string const& alg_not) {
         if(alg_not.size() != 2) {
             throw std::invalid_argument("expecting a3, b7 format for squares");
@@ -69,6 +73,10 @@ namespace jchess {
     PieceType type_from_piece(Piece piece) {
         assert(piece != NO_PIECE);
         return static_cast<PieceType>((piece > 5) ? piece - 6 : piece);
+    }
+
+    Piece piece_from(PieceType type, Color color) {
+        return static_cast<Piece>(type + ((color == BLACK) ? 6 : 0));
     }
 
     char char_from_piece(Piece piece) {
@@ -106,7 +114,7 @@ namespace jchess {
         int rank = 7, file = 0;
         for(char c : pieces) {
             if(isnumber(c)) {
-                file += (c - '1');
+                file += (c - '0');
             } else if(c == '/') {
                 --rank;
                 file = 0;

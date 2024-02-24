@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "jchess/magic_bitboard.h"
+#include "jchess/bitboard.h"
 #include <vector>
 
 using namespace jchess;

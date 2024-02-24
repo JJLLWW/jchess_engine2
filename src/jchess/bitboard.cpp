@@ -32,6 +32,15 @@ namespace jchess {
         }
     }
 
+    std::vector<Square> bb_get_squares(Bitboard bb) {
+        std::vector<Square> squares;
+        while(bb) {
+            squares.push_back(bit_scan(bb, false));
+            bb &= bb - 1;
+        }
+        return squares;
+    }
+
     std::string bb_to_string(Bitboard bb) {
         std::string str;
         for(int i=0; i<64; ++i) {
