@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define USE_32_BIT_MULTIPLICATIONS
-
 typedef unsigned long long uint64;
 
 uint64 random_uint64() {
