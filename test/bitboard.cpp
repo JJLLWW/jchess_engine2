@@ -71,3 +71,10 @@ TEST_CASE("ray moves with blockers") {
     Bitboard rays = get_ray_attacks(blockers, SWEST, G7);
     REQUIRE(rays == bb_from_squares({D4, E5, F6}));
 }
+
+TEST_CASE("castle right bitboards") {
+    REQUIRE(WHITE_QS_BB == bb_from_squares({A1, B1, C1, D1, E1}));
+    REQUIRE(BLACK_QS_BB == bb_from_squares({A8, B8, C8, D8, E8}));
+    REQUIRE(WHITE_KS_BB == bb_from_squares({E1, F1, G1, H1}));
+    REQUIRE(BLACK_KS_BB == bb_from_squares({E8, F8, G8, H8}));
+}

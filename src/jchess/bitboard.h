@@ -13,10 +13,30 @@ namespace jchess {
     const Bitboard FILE_A_BB = 0x101010101010101;
     const Bitboard RANK_1_BB = 0xFF;
 
+    const Bitboard WHITE_QS_BB = 0x1F;
+    const Bitboard WHITE_KS_BB = 0xF0;
+    const Bitboard BLACK_QS_BB = WHITE_QS_BB << 7*8;
+    const Bitboard BLACK_KS_BB = WHITE_KS_BB << 7*8;
+
+    // can't use an array here as these enum values are not contiguous
+    constexpr Bitboard castle_square_bb(CastleBits castle_type) {
+        switch (castle_type) {
+            case WHITE_KS:
+                return WHITE_KS_BB;
+            case WHITE_QS:
+                return WHITE_QS_BB;
+            case BLACK_KS:
+                return BLACK_KS_BB;
+            case BLACK_QS:
+                return BLACK_QS_BB;
+        }
+    }
+
     std::string bb_to_string(Bitboard bb);
 
     Bitboard get_king_attacks(Bitboard kingSet);
 
+    Bitboard bb_from_square(Square square);
     Bitboard bb_from_squares(std::vector<Square> squares);
 
     void bb_add_square(Bitboard& bb, Square square);
@@ -106,6 +126,10 @@ namespace jchess {
     const std::array<Bitboard, 8> RANK_BBS {initialise_rank_bbs()};
     const std::array<Bitboard, 15> DIAG_BBS {initialise_diag_bbs()};
     const std::array<Bitboard, 15> ANTI_DIAG_BBS {initialise_anti_diag_bbs()};
+
+    const Bitboard pawn_start_bb[2] {RANK_BBS[RANK_2], RANK_BBS[RANK_7]}; // WHITE, BLACK
+    const Bitboard back_rank_bb[2] {RANK_BBS[RANK_8], RANK_BBS[RANK_1]}; // WHITE, BLACK
+
     // usage RAY_BBS[WEST][A3]
     const std::array<std::array<Bitboard, 64>, 8> RAY_BBS {initialise_ray_bbs()};
 

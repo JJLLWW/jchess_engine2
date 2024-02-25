@@ -24,6 +24,7 @@ namespace jchess {
         return rook_attacks[square][get_rook_index(blockers, square)];
     }
 
+    // making this constexpr isn't trivial due to the subsets of mask returning a vector
     MagicDatabase::MagicDatabase() {
         // TEMPORARY
         for(Square square = 0; square < 64; ++square) {

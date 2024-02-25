@@ -64,6 +64,12 @@ namespace jchess {
         return bb & (1ull << square);
     }
 
+    Bitboard bb_from_square(Square square) {
+        Bitboard bb = 0;
+        bb_add_square(bb, square);
+        return bb;
+    }
+
     Bitboard bb_from_squares(std::vector<Square> squares) {
         Bitboard bb = 0;
         for(const Square square : squares) {

@@ -12,14 +12,17 @@ TEST_CASE("xray primitives") {
     REQUIRE(true);
 }
 
+TEST_CASE("attackers of") {
+    MoveGenerator gen;
+    // TODO: test this
+}
+
 TEST_CASE("move generation simple 1") {
     BoardState state{starting_fen};
-    state.remove_piece_from_square(A2);
-    state.remove_piece_from_square(G2);
     MoveGenerator mg;
     auto moves = mg.get_legal_moves(state, WHITE);
-    // 4 knight moves, 6 rook moves and 2 bishop moves in this position
-    REQUIRE(moves.size() == 12);
+    // 4 knight moves, 16 pawn moves
+    REQUIRE(moves.size() == 20);
 }
 
 TEST_CASE("move generation simple 2") {
@@ -30,4 +33,15 @@ TEST_CASE("move generation simple 2") {
     // can't create a full test until king moves are implemented, LGTM
     // for just the queen though.
     REQUIRE(true);
+}
+
+TEST_CASE("castling 1") {
+    std::string castle_fen = "4k3/8/8/8/8/8/8/R3K2R w KQkq - 0 1";
+    BoardState state{castle_fen};
+    MoveGenerator mg;
+    auto w_moves = mg.get_legal_moves(state, WHITE);
+    auto b_moves = mg.get_legal_moves(state, BLACK);
+    auto end = std::remove_if(w_moves.begin(), w_moves.end(), [](Move move){ return (move.source == A1) || (move.source == H1); });
+    w_moves.erase(end, w_moves.end());
+    REQUIRE(w_moves.size() == 7); // 5 king steps and 2 castles
 }

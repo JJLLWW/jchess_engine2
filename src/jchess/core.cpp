@@ -109,6 +109,14 @@ namespace jchess {
         }
     }
 
+    CastleBits castle_flag_from(Color color, bool queen_side) {
+        if(color == WHITE) {
+            return queen_side ? WHITE_QS : WHITE_KS;
+        } else {
+            return queen_side ? BLACK_QS : BLACK_KS;
+        }
+    }
+
     std::vector<std::pair<Square, Piece>> FEN::read_fen_pieces(std::string const& pieces) {
         std::vector<std::pair<Square, Piece>> fen_pieces;
         int rank = 7, file = 0;

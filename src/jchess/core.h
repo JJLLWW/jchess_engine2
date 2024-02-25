@@ -25,6 +25,7 @@ namespace jchess {
         NO_PIECE = 64
     };
 
+    const Piece all_promotion[2][4] {{W_ROOK, W_KNIGHT, W_BISHOP, W_QUEEN}, {B_ROOK, B_KNIGHT, B_BISHOP, B_QUEEN}};
     PieceType type_from_piece(Piece piece);
     Piece piece_from_char(char c);
     char char_from_piece(Piece piece);
@@ -52,7 +53,7 @@ namespace jchess {
     using Square = int; // avoid issues with casting an enum and offset additions
 
     enum File { A, B, C, D, E, F, G, H };
-    enum Rank { RANK_1, RANk_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8 };
+    enum Rank { RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8 };
 
     enum Squares {
         A1, B1, C1, D1, E1, F1, G1, H1,
@@ -92,6 +93,7 @@ namespace jchess {
     enum CastleBits { WHITE_KS = 1, WHITE_QS = 2, BLACK_KS = 4, BLACK_QS = 8 };
 
     CastleBits castle_bits_from_char(char c);
+    CastleBits castle_flag_from(Color color, bool queen_side);
 
     struct FEN {
         FEN(const char *fen_string) : FEN(std::string(fen_string)) {}
@@ -110,6 +112,7 @@ namespace jchess {
         Move(const char *uci_move) : Move(std::string(uci_move)) {}
         Move(std::string const& uci_move);
         Move(Square source, Square dest) : source{source}, dest{dest} {}
+        Move(Square source, Square dest, Piece promotion) : source{source}, dest{dest}, promotion{promotion} {}
         Square source;
         Square dest;
         Piece promotion = NO_PIECE;

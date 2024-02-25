@@ -4,6 +4,7 @@
 #include <sstream>
 #include <numeric>
 #include <cassert>
+#include <bit> // C++20 popcount
 
 namespace jchess {
     GameState::GameState(FEN const& fen) {
@@ -138,6 +139,18 @@ namespace jchess {
         bb_add_square(color_bbs[piece_color], square);
         bb_add_square(piece_bbs[piece], square);
         pieces[square] = piece;
+    }
+
+    bool can_castle(BoardState const& state, Color color, bool queen_side, Bitboard attacked) {
+        CastleBits castle_type = castle_flag_from(color, queen_side);
+        if(!(state.castle_right_mask & castle_type)) {
+            return false; // no right to castle
+        }
+        Bitboard castle_squares = castle_square_bb(castle_type);
+        if(std::popcount(castle_squares & (state.all_pieces_bb | attacked)) > 2) {
+            return false; // castling obstructed or moving through check
+        }
+        return true;
     }
 
     void Board::set_position(const FEN &fen) {

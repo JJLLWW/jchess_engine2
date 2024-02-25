@@ -2,6 +2,40 @@
 #include <cassert>
 
 namespace jchess {
+    namespace {
+        void append_moves_from_source_bb(std::vector<Move>& moves, Square dest, Bitboard source_bb) {
+            auto srcs = bb_get_squares(source_bb);
+            for(auto src: srcs) {
+                moves.emplace_back(src, dest);
+            }
+        }
+        void append_moves_from_dest_bb(std::vector<Move> &moves, Square source, Bitboard dest_bb) {
+            auto dests = bb_get_squares(dest_bb);
+            for (auto dest: dests) {
+                moves.emplace_back(source, dest);
+            }
+        }
+
+        void append_king_castle_moves(std::vector<Move>& moves, BoardState const &state, Bitboard attacked, Color color) {
+            Square king_sq = (color == WHITE) ? E1 : E8;
+            if (can_castle(state, color, true, attacked)) { // queenside
+                Square king_dest = king_sq + 2*offset_of_dir[WEST];
+                moves.emplace_back(king_sq, king_dest);
+            }
+
+            if (can_castle(state, color, false, attacked)) { // kingside
+                Square king_dest = king_sq + 2*offset_of_dir[EAST];
+                moves.emplace_back(king_sq, king_dest);
+            }
+        }
+
+        Square get_king_square(BoardState const& state, Color color) {
+            Piece own_king_piece = piece_from(KING, color);
+            Bitboard own_king_bb = state.piece_bbs[own_king_piece];
+            return bit_scan(own_king_bb, false);
+        }
+    }
+
     MoveGenerator::MoveGenerator() {
         king_attacks_tbl = compute_all_king_attacks();
         knight_attacks_tbl = compute_all_knight_attacks();
@@ -12,28 +46,75 @@ namespace jchess {
 
     std::vector<Move> MoveGenerator::get_legal_moves(BoardState const& state, Color color) {
         // TODO: board state should store where the kings are
-        Piece own_king_piece = piece_from(KING, color);
-        Bitboard own_king_bb = state.piece_bbs[own_king_piece];
-        Square king_sq = bit_scan(own_king_bb, false);
+        Square king_sq = get_king_square(state, color);
 
-        compute_pin_masks(state, color, king_sq);
+        compute_pin_info(state, color, king_sq);
 
         std::vector<Move> moves;
-        // detect if in check + double check somehow
-        // if double check, just get the king moves
-        // if single check, also get moves that capture the checker (HOW?!?!)
 
-        // if not in check:
-        // king castles.
-        // pawns (hard special case)
+        Bitboard checkers = get_attackers_of(king_sq, state, static_cast<Color>(!color));
+        int num_checkers = std::popcount(checkers);
+        bool in_check = (num_checkers > 0);
+        bool in_double_check = (num_checkers > 1);
+        Square checker_sq = in_check ? bit_scan(checkers, false) : 0;
 
-        // knights + sliders
-        get_all_piece_moves(moves, KNIGHT, state, color);
-        get_all_piece_moves(moves, BISHOP, state, color);
-        get_all_piece_moves(moves, ROOK, state, color);
-        get_all_piece_moves(moves, QUEEN, state, color);
+        Bitboard king_dests = get_king_non_castle_moves(king_sq, state, color);
+        append_moves_from_dest_bb(moves, king_sq, king_dests);
 
+        // TODO: pawns (ouch)
+        // - believe non enp-capture discoveries are handled by checking if the pawn is still in its pin mask.
+        // - since the enp capture can only happen <= 2 times could just directly make and unmake the move.
+        if(!in_double_check) {
+            if(!in_check) {
+                // castling only possible if not in check
+                Bitboard attacked = get_all_attacked_squares(state, static_cast<Color>(!color));
+                append_king_castle_moves(moves, state, attacked, color);
+
+                // consider all moves of other pieces as don't have to capture the checker.
+                get_all_piece_moves(moves, KNIGHT, state, color);
+                get_all_piece_moves(moves, BISHOP, state, color);
+                get_all_piece_moves(moves, ROOK, state, color);
+                get_all_piece_moves(moves, QUEEN, state, color);
+                get_all_pawn_moves(moves, state, color);
+
+            } else {
+                // have already considered moving the king, the only other choice is to capture the checker
+                // (believe don't need to consider enp discovery here)
+                Bitboard sources_bb = get_unpinned_attackers_of(checker_sq, state, color); // counts pawns
+                append_moves_from_source_bb(moves, checker_sq, sources_bb);
+            }
+        }
         return moves;
+    }
+
+    void MoveGenerator::get_all_pawn_moves(std::vector<Move>& moves, BoardState const& state, Color color) {
+        Bitboard pawns_bb = state.piece_bbs[piece_from(PAWN, color)];
+        while(pawns_bb) {
+            Square src = bit_scan(pawns_bb, false);
+            Bitboard dests = get_pawn_moves(src, state, color);
+            Bitboard promote = back_rank_bb[color] & dests;
+            append_moves_from_dest_bb(moves, src, dests & ~promote);
+            for(Square dest : bb_get_squares(promote)) {
+                for(Piece promotion : all_promotion[color]) {
+                    moves.emplace_back(src, dest, promotion);
+                }
+            }
+            pawns_bb &= pawns_bb - 1;
+        }
+    }
+
+    Bitboard MoveGenerator::get_pawn_moves(Square square, BoardState const& state, Color color) {
+        // attacks (enp attack not handled)
+        Color other_color = static_cast<Color>(!color);
+        Direction push_dir = (color == WHITE) ? NORTH : SOUTH;
+        Bitboard attacks = pawn_attacks_tbl[color][square] & pin_masks[square] & state.color_bbs[other_color];
+        // arithmetic
+        Bitboard push_one = bb_from_square(square + offset_of_dir[push_dir]) & pin_masks[square] & ~state.all_pieces_bb;
+        Bitboard push_two = 0ull;
+        if(push_one && (bb_from_square(square) & pawn_start_bb[color])) {
+            push_two = bb_from_square(square + 2*offset_of_dir[push_dir]) & pin_masks[square] & ~state.all_pieces_bb;
+        }
+        return attacks | push_one | push_two;
     }
 
     void MoveGenerator::get_all_piece_moves(std::vector<Move>& moves, PieceType type, BoardState const& state, Color color) {
@@ -43,10 +124,7 @@ namespace jchess {
         while(src_bb) {
             Square src = bit_scan(src_bb, false);
             Bitboard dests_bb = get_slider_and_knight_moves(type, src, own, enemy) & pin_masks[src];
-            auto dests = bb_get_squares(dests_bb);
-            for(auto dest : dests) {
-                moves.emplace_back(src, dest);
-            }
+            append_moves_from_dest_bb(moves, src, dests_bb);
             src_bb &= src_bb - 1;
         }
     }
@@ -67,7 +145,7 @@ namespace jchess {
         }
     }
 
-    Bitboard MoveGenerator::get_king_moves(Square source, BoardState const& state, Color color) {
+    Bitboard MoveGenerator::get_king_non_castle_moves(Square source, BoardState const& state, Color color) {
         Color other_color = (color == WHITE) ? BLACK : WHITE;
         Bitboard potential_moves = king_attacks_tbl[source];
         Bitboard in_check = get_all_attacked_squares(state, other_color);
@@ -158,9 +236,9 @@ namespace jchess {
         return xray_rook_moves(all_pieces, blockers, queen_sq) | xray_bishop_moves(all_pieces, blockers, queen_sq);
     }
 
-    // this pin masks approach may not be a great idea for testability
-    void MoveGenerator::compute_pin_masks(BoardState const& state, Color color, Square king_sq) {
+    void MoveGenerator::compute_pin_info(BoardState const& state, Color color, Square king_sq) {
         std::fill(pin_masks.begin(), pin_masks.end(), -1ull);
+        pinned_bb = 0ull;
 
         auto [rank, file] = rank_file_from_square(king_sq);
         Bitboard own_pieces = state.color_bbs[color];
@@ -180,10 +258,28 @@ namespace jchess {
             if(pinner) {
                 Square pinner_sq = bit_scan(pinner, false);
                 Bitboard pinned = dir_ray & rectangle_between_tbl[king_sq][pinner_sq] & own_pieces;
+                pinned_bb |= pinned;
                 Square pinned_sq = bit_scan(pinned, false);
-                pin_masks[pinned_sq] = dir_ray;
+                pin_masks[pinned_sq] &= dir_ray; // should be &= in case of double pin.
             }
         }
+    }
+
+    // does this need to be a seperate function?
+    Bitboard MoveGenerator::get_unpinned_attackers_of(Square square, BoardState const& state, Color color) {
+        Bitboard attackers = get_attackers_of(square, state, color);
+        return attackers & !pinned_bb;
+    }
+
+    Bitboard MoveGenerator::get_attackers_of(Square square, BoardState const& state, Color color) {
+        Color other_color = static_cast<Color>(!color);
+        Bitboard diag_sliders = state.piece_bbs[piece_from(BISHOP, color)] | state.piece_bbs[piece_from(QUEEN, color)];
+        Bitboard orth_sliders = state.piece_bbs[piece_from(ROOK, color)] | state.piece_bbs[piece_from(QUEEN, color)];
+        Bitboard knights = knight_attacks_tbl[square] & state.piece_bbs[piece_from(KNIGHT, color)];
+        Bitboard ortho = get_rook_moves(square, state.all_pieces_bb, state.all_pieces_bb) & orth_sliders;
+        Bitboard diag = get_bishop_moves(square, state.all_pieces_bb, state.all_pieces_bb) & diag_sliders;
+        Bitboard pawn = pawn_attacks_tbl[other_color][square] & state.piece_bbs[piece_from(PAWN, color)];
+        return knights | ortho | diag | pawn;
     }
 
     Bitboard detail::get_rectangle_between(Square sq1, Square sq2) {
