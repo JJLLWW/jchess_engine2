@@ -50,17 +50,8 @@ namespace jchess {
         return std::nullopt;
     }
 
-    BoardState::BoardState(FEN const& fen) {
-        castle_right_mask = fen.castle_right_mask;
-        enp_square = fen.enp_square;
-        std::fill(pieces.begin(), pieces.end(), NO_PIECE);
-        for(const auto& [square, piece] : fen.pieces) {
-            pieces[square] = piece;
-            bb_add_square(piece_bbs[piece], square);
-        }
-        color_bbs[WHITE] = std::reduce(piece_bbs.begin(), piece_bbs.begin() + 6, 0ull, std::bit_or<uint64_t>{});
-        color_bbs[BLACK] = std::reduce(piece_bbs.begin() + 6, piece_bbs.end(), 0ull, std::bit_or<uint64_t>{});
-        all_pieces_bb = color_bbs[WHITE] | color_bbs[BLACK];
+    std::vector<Move> Board::generate_legal_moves() {
+        return movegen.get_legal_moves(board_state, game_state.side_to_move);
     }
 
     // it may be worth decomposing this into private helpers.
@@ -80,7 +71,8 @@ namespace jchess {
             next_state.enp_square = move.source + ((side_to_move == WHITE) ? offset_of_dir[NORTH] : offset_of_dir[SOUTH]);
         } else if(type_from_piece(src_piece) == KING) {
             // king moves - king can no longer castle + castling involves moving associated rook
-            next_state.castle_right_mask = 0;
+            auto side_castle_flags = (side_to_move == WHITE) ? (WHITE_QS | WHITE_KS) : (BLACK_QS | BLACK_KS);
+            next_state.castle_right_mask &= ~side_castle_flags;
             auto castle_type = get_move_castle_type(current, move);
             if(castle_type) {
                 switch(castle_type.value()) {
@@ -118,39 +110,9 @@ namespace jchess {
         // handle moving the piece and possible promotions.
         Piece dest_piece = move.promotion == NO_PIECE ? src_piece : move.promotion;
         next_state.remove_piece_from_square(move.source);
+        next_state.remove_piece_from_square(move.dest); // cryptic
         next_state.place_piece_on_square(dest_piece, move.dest);
         return next_state;
-    }
-
-    void BoardState::remove_piece_from_square(Square square) {
-        Piece piece = pieces[square];
-        if(piece != NO_PIECE) {
-            Color piece_color = color_from_piece(piece);
-            bb_remove_square(all_pieces_bb, square);
-            bb_remove_square(color_bbs[piece_color], square);
-            bb_remove_square(piece_bbs[piece], square);
-            pieces[square] = NO_PIECE;
-        }
-    }
-
-    void BoardState::place_piece_on_square(Piece piece, Square square) {
-        Color piece_color = color_from_piece(piece);
-        bb_add_square(all_pieces_bb, square);
-        bb_add_square(color_bbs[piece_color], square);
-        bb_add_square(piece_bbs[piece], square);
-        pieces[square] = piece;
-    }
-
-    bool can_castle(BoardState const& state, Color color, bool queen_side, Bitboard attacked) {
-        CastleBits castle_type = castle_flag_from(color, queen_side);
-        if(!(state.castle_right_mask & castle_type)) {
-            return false; // no right to castle
-        }
-        Bitboard castle_squares = castle_square_bb(castle_type);
-        if(std::popcount(castle_squares & (state.all_pieces_bb | attacked)) > 2) {
-            return false; // castling obstructed or moving through check
-        }
-        return true;
     }
 
     void Board::set_position(const FEN &fen) {
@@ -160,6 +122,7 @@ namespace jchess {
 
     void Board::make_move(jchess::Move const& move) {
         prev_board_states.push(board_state);
+        prev_moves.push(move);
         board_state = get_state_after_move(board_state, move);
         game_state.increase_half_move();
     }
@@ -168,6 +131,7 @@ namespace jchess {
         if(prev_board_states.empty()) {
             return false;
         }
+        prev_moves.pop();
         board_state = prev_board_states.top();
         prev_board_states.pop();
         game_state.decrease_half_move();

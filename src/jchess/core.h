@@ -13,6 +13,8 @@ namespace jchess {
     const std::string piece_chars = "PRNBKQprnbkq";
     const std::string castle_bits = "KQkq";
 
+    class Board;
+
     using Bitboard = uint64_t;
 
     enum Color { WHITE, BLACK };
@@ -25,6 +27,7 @@ namespace jchess {
         NO_PIECE = 64
     };
 
+    constexpr Color other_color(Color color) { return (color == WHITE) ? BLACK : WHITE; }
     const Piece all_promotion[2][4] {{W_ROOK, W_KNIGHT, W_BISHOP, W_QUEEN}, {B_ROOK, B_KNIGHT, B_BISHOP, B_QUEEN}};
     PieceType type_from_piece(Piece piece);
     Piece piece_from_char(char c);
@@ -39,11 +42,11 @@ namespace jchess {
 
     const std::array<Direction, 8> all_directions {WEST, EAST, NORTH, SOUTH, NWEST, NEAST, SWEST, SEAST};
     const int offset_of_dir[8] = {-1, 1, 8, -8, 7, 9, -9, -7 };
+    // in (rank, file) order
     const int offsets_of_dir[8][2] = {
-        {-1, 0}, {1,0}, {0, 1}, {0, -1},
-        {-1,1}, {1, 1}, {-1,-1}, {1, -1}
+        {0, -1}, {0, 1}, {1, 0}, {-1, 0},
+        {1, -1}, {1, 1}, {-1,-1}, {-1, 1}
     };
-
     bool is_orthogonal_dir(Direction dir);
 
     constexpr bool is_negative_dir(Direction dir) {

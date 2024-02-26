@@ -12,6 +12,7 @@ add_library(chess_lib STATIC
     src/jchess/magic_bitboard.cpp
     src/jchess/board.cpp
     src/jchess/movegen.cpp
+    src/jchess/board_state.cpp
 )
 target_include_directories(chess_lib PUBLIC src)
 
@@ -37,6 +38,10 @@ add_executable(tests
 )
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain chess_lib)
 target_include_directories(tests PRIVATE src)
+
+add_executable(perft test/perft.cpp)
+target_link_libraries(perft PRIVATE chess_lib)
+target_include_directories(perft PRIVATE src)
 
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(CTest)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "board.h"
+#include "board_state.h"
 #include "magic_bitboard.h"
 
 #include <vector>
@@ -39,15 +39,20 @@ namespace jchess {
         Bitboard xray_queen_moves(Bitboard all_pieces, Bitboard blockers, Square queen_sq);
         // internal detail?
         void compute_pin_info(BoardState const& state, Color color, Square king_sq);
+        Bitboard get_ray_between(Square sq1, Square sq2);
+        bool in_check_after_enp(Square src, Square enp, BoardState const& state, Color color);
     private:
         MagicDatabase magic_db;
+        BoardState cur_state;
         std::array<Bitboard, 64> king_attacks_tbl {};
         std::array<Bitboard, 64> knight_attacks_tbl {};
         std::array<Bitboard, 64> pawn_attacks_tbl[2] {}; // pawn_attacks_tbl[WHITE]
         void initialise_rectangle_between_tbl();
         Bitboard rectangle_between_tbl[64][64];
         std::array<Bitboard, 64> pin_masks;
-        // temporary
         Bitboard pinned_bb = 0ull;
+    private: // TEMPORARY
+        void append_moves_from_source_bb(std::vector<Move>& moves, Square dest, Bitboard source_bb);
+        void append_moves_from_dest_bb(std::vector<Move> &moves, Square source, Bitboard dest_bb);
     };
 }

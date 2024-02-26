@@ -103,18 +103,22 @@ namespace jchess {
         return init;
     }
 
+    constexpr Bitboard compute_ray_attack(Square sq, Direction d) {
+        const auto [dx, dy] = offsets_of_dir[d];
+        const auto [x, y] = rank_file_from_square(sq);
+        Bitboard bb = 0ull;
+        for(int i=1; check_rank_file(x + i*dx, y + i*dy); ++i) {
+            bb_add_square(bb, square_from_rank_file(x + i*dx, y + i*dy));
+        }
+        return bb;
+    }
+
     // do this in a slow but correct way
     constexpr std::array<std::array<Bitboard, 64>, 8> initialise_ray_bbs() {
         std::array<std::array<Bitboard, 64>, 8> init{};
         for(Square sq=0; sq<64; ++sq) {
             for(Direction d : all_directions) {
-                const auto [dx, dy] = offsets_of_dir[d];
-                const auto [x, y] = rank_file_from_square(sq);
-                Bitboard bb = 0ull;
-                for(int i=1; check_rank_file(x + i*dx, y + i*dy); ++i) {
-                    bb_add_square(bb, square_from_rank_file(x + i*dx, y + i*dy));
-                }
-                init[d][sq] = bb;
+                init[d][sq] = compute_ray_attack(sq, d);
             }
         }
         return init;
