@@ -9,13 +9,16 @@
 using namespace jchess;
 
 TEST_CASE("DEBUG ONLY") {
-    Board board{starting_fen};
-    board.make_move({B1, A3});
-    board.make_move({B7, B5});
-    board.make_move({A3, B5});
-    board.make_move({B8, A6});
-    board.make_move({B5, A3});
-    board.generate_legal_moves(); // crash
+    // pos_3, depth 5, b4f4 h4g3 a5b4 c7c5 (stockfish finds b5c6 enp out of check.)
+    std::string fen = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1";
+    Board board{fen};
+    std::vector<std::string> move_strs {"b4f4", "h4g3", "a5b4", "c7c5"};
+    for(const auto& move_str : move_strs) {
+        Move move {move_str};
+        board.make_move(move);
+    }
+    auto moves = board.generate_legal_moves();
+    int i = 2;
 }
 
 TEST_CASE("xray primitives") {

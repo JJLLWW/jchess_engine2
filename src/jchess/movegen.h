@@ -17,14 +17,14 @@ namespace jchess {
     class MoveGenerator {
     public:
         MoveGenerator();
-        std::vector<Move> get_legal_moves(BoardState const& state, Color color);
+        std::vector<Move> get_legal_moves(BoardState& state, Color color);
         // higher level helpers
         // - get_attackers_of also counts pinned_bb pieces as "attackers"
         void get_all_pawn_moves(std::vector<Move>& moves, BoardState const& state, Color color);
         Bitboard get_pawn_moves(Square square, BoardState const& state, Color color);
         Bitboard get_attackers_of(Square square, BoardState const& state, Color color);
         Bitboard get_unpinned_attackers_of(Square square, BoardState const& state, Color color);
-        Bitboard get_king_non_castle_moves(Square source, BoardState const& state, Color color);
+        Bitboard get_king_non_castle_moves(Square source, BoardState& state, Color color);
         Bitboard get_all_attacked_squares(BoardState const& state, Color color);
         void get_all_piece_moves(std::vector<Move>& moves, PieceType type, BoardState const& state, Color color);
         // these get_PIECE_moves functions are not pin aware, some of these moves may put the king in check.
@@ -44,6 +44,7 @@ namespace jchess {
     private:
         MagicDatabase magic_db;
         BoardState cur_state;
+        Square king_sq;
         std::array<Bitboard, 64> king_attacks_tbl {};
         std::array<Bitboard, 64> knight_attacks_tbl {};
         std::array<Bitboard, 64> pawn_attacks_tbl[2] {}; // pawn_attacks_tbl[WHITE]

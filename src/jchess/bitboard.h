@@ -69,6 +69,7 @@ namespace jchess {
     Bitboard get_bishop_attacks(Bitboard occupied, Square square);
     Bitboard get_rook_attacks(Bitboard occupied, Square square);
 
+    // if can;t get these out of the public header at least put them in a detail namespace
     constexpr std::array<Bitboard, 8> initialise_file_bbs() {
         std::array<Bitboard, 8> init{};
         for(int i=0; i<8; ++i) {

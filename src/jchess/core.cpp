@@ -24,6 +24,14 @@ namespace jchess {
         }
     }
 
+    std::string square_to_string(Square square) {
+        auto [rank, file] = rank_file_from_square(square);
+        std::string as_str;
+        as_str += ('a' + file);
+        as_str += ('1' + rank);
+        return as_str;
+    }
+
     bool is_corner_square(Square square) {
         return square == A1 || square == A8 || square == H1 || square == H8;
     }
@@ -170,5 +178,11 @@ namespace jchess {
                 promotion = piece_from_char(uci_move[4]);
             }
         }
+    }
+
+    std::string move_to_string(Move const& move) {
+        std::string res = square_to_string(move.source);
+        res += square_to_string(move.dest);
+        return res;
     }
 }

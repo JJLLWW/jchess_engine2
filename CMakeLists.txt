@@ -27,8 +27,14 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/catchorg/Catch2.git
     GIT_TAG        v3.4.0 # or a later release
 )
-
 FetchContent_MakeAvailable(Catch2)
+
+FetchContent_Declare(
+    json
+    URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+)
+FetchContent_MakeAvailable(json)
+
 add_executable(tests
     test/core.cpp
     test/board.cpp
@@ -42,6 +48,10 @@ target_include_directories(tests PRIVATE src)
 add_executable(perft test/perft.cpp)
 target_link_libraries(perft PRIVATE chess_lib)
 target_include_directories(perft PRIVATE src)
+
+add_executable(perft2 test/perft2.cpp)
+target_link_libraries(perft2 PRIVATE chess_lib nlohmann_json::nlohmann_json)
+target_include_directories(perft2 PRIVATE src)
 
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(CTest)

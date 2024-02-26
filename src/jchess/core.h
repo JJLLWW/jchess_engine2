@@ -69,6 +69,7 @@ namespace jchess {
         A8, B8, C8, D8, E8, F8, G8, H8
     };
 
+    std::string square_to_string(Square square);
     bool is_corner_square(Square square);
     int horizontal_distance(Square sq1, Square sq2);
     int vertical_distance(Square sq1, Square sq2);
@@ -121,4 +122,6 @@ namespace jchess {
         Piece promotion = NO_PIECE;
         bool is_null_move = false;
     };
+
+    std::string move_to_string(Move const& move);
 }

@@ -10,9 +10,13 @@ namespace jchess {
             return false; // no right to castle
         }
         Bitboard castle_squares = castle_square_bb(castle_type);
-        if(std::popcount(castle_squares & (state.all_pieces_bb | attacked)) > 2) {
-            return false; // castling obstructed or moving through check
+        if(std::popcount(castle_squares & state.all_pieces_bb) > 2) {
+            return false; // castling obstructed by piece
         }
+        if(attacked & ~(FILE_BBS[A] | FILE_BBS[B] | FILE_BBS[H]) & castle_squares) {
+            return false; // squares king "moves through" are being attacked.
+        }
+
         return true;
     }
 

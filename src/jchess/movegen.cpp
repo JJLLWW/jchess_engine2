@@ -74,9 +74,9 @@ namespace jchess {
     }
 
 
-    std::vector<Move> MoveGenerator::get_legal_moves(BoardState const& state, Color color) {
+    std::vector<Move> MoveGenerator::get_legal_moves(BoardState& state, Color color) {
         // TODO: board state should store where the kings are
-        Square king_sq = get_king_square(state, color);
+        king_sq = get_king_square(state, color);
 
         compute_pin_info(state, color, king_sq);
         cur_state = state; // not really used yet - future refactor
@@ -103,8 +103,16 @@ namespace jchess {
                 if(type_from_piece(state.pieces[checker_sq]) != KNIGHT) {
                     checker_squares |= get_ray_between(king_sq, checker_sq);
                 }
-                for(Bitboard& pin_mask : pin_masks) {
-                    pin_mask &= checker_squares;
+                // complicated due to special case of enp capturing a checker
+                bool can_enp_capture =
+                    (type_from_piece(state.pieces[checker_sq]) == PAWN) &&
+                    state.enp_square.has_value() &&
+                    state.enp_square.value() + (color == WHITE ? offset_of_dir[SOUTH] : offset_of_dir[NORTH]) == checker_sq;
+                for(Square sq=0; sq<64; ++sq) {
+                    pin_masks[sq] &= checker_squares;
+                    if(can_enp_capture && state.pieces[sq] == piece_from(PAWN, color)) {
+                        pin_masks[sq] |= bb_from_square(state.enp_square.value());
+                    }
                 }
             }
 
@@ -138,22 +146,22 @@ namespace jchess {
         // attacks (enp attack not handled)
         Color other_color = static_cast<Color>(!color);
         Direction push_dir = (color == WHITE) ? NORTH : SOUTH;
-        Bitboard attacks = pawn_attacks_tbl[color][square] & pin_masks[square] & state.color_bbs[other_color];
+        Bitboard attacks = pawn_attacks_tbl[color][square] & state.color_bbs[other_color];
         Bitboard enp = 0ull;
         if(state.enp_square.has_value()) {
-            Bitboard potential_enp = pawn_attacks_tbl[color][square] & pin_masks[square] & bb_from_square(state.enp_square.value());
+            Bitboard potential_enp = pawn_attacks_tbl[color][square] & bb_from_square(state.enp_square.value());
             Square other_pawn = state.enp_square.value() + offset_of_dir[(color == WHITE) ? SOUTH : NORTH];
             // some obscure positions can move into check after enp
             if(potential_enp && !in_check_after_enp(square, other_pawn, state, color)) {
                 enp = potential_enp;
             }
         }
-        Bitboard push_one = bb_from_square(square + offset_of_dir[push_dir]) & pin_masks[square] & ~state.all_pieces_bb;
+        Bitboard push_one = bb_from_square(square + offset_of_dir[push_dir]) & ~state.all_pieces_bb;
         Bitboard push_two = 0ull;
         if(push_one && (bb_from_square(square) & pawn_start_bb[color])) {
-            push_two = bb_from_square(square + 2*offset_of_dir[push_dir]) & pin_masks[square] & ~state.all_pieces_bb;
+            push_two = bb_from_square(square + 2*offset_of_dir[push_dir]) & ~state.all_pieces_bb;
         }
-        return attacks | enp | push_one | push_two;
+        return (attacks | enp | push_one | push_two) & pin_masks[square];
     }
 
     void MoveGenerator::get_all_piece_moves(std::vector<Move>& moves, PieceType type, BoardState const& state, Color color) {
@@ -184,11 +192,17 @@ namespace jchess {
         }
     }
 
-    Bitboard MoveGenerator::get_king_non_castle_moves(Square source, BoardState const& state, Color color) {
+    Bitboard MoveGenerator::get_king_non_castle_moves(Square source, BoardState& state, Color color) {
         Color other_color = (color == WHITE) ? BLACK : WHITE;
         Bitboard potential_moves = king_attacks_tbl[source];
+        // TEMPORARY (to get squares attacked once the king has moved, remove it from the board)
+        state.remove_piece_from_square(king_sq);
+        // does this take into account if the other side has one of their own pieces on the square?
         Bitboard in_check = get_all_attacked_squares(state, other_color);
-        return potential_moves & ~(in_check | state.all_pieces_bb);
+        state.place_piece_on_square(piece_from(KING, color), king_sq);
+        // END TEMPORARY
+        // it may be possible to capture with the king
+        return potential_moves & ~(in_check | state.color_bbs[color]);
     }
 
     Bitboard MoveGenerator::get_knight_moves(Square source, Bitboard own_pieces) {
@@ -217,6 +231,8 @@ namespace jchess {
         return bishop_moves | rook_moves;
     }
 
+    // this is only used for detecting if the king is in check or if it can castle, should allow capturing
+    // own pieces for these purposes
     Bitboard MoveGenerator::get_all_attacked_squares(BoardState const& state, Color color) {
         Bitboard all_attacked = 0ull;
         Color other_color = (color == WHITE) ? BLACK : WHITE;
@@ -231,16 +247,16 @@ namespace jchess {
                     all_attacked |= pawn_attacks_tbl[color][square];
                     break;
                 case ROOK:
-                    all_attacked |= get_rook_moves(square, state.color_bbs[color], state.color_bbs[other_color]);
+                    all_attacked |= get_rook_moves(square, 0ull, state.all_pieces_bb);
                     break;
                 case KNIGHT:
-                    all_attacked |= get_knight_moves(square, state.color_bbs[color]);
+                    all_attacked |= get_knight_moves(square, 0ull);
                     break;
                 case BISHOP:
-                    all_attacked |= get_bishop_moves(square, state.color_bbs[color], state.color_bbs[other_color]);
+                    all_attacked |= get_bishop_moves(square, 0ull, state.all_pieces_bb);
                     break;
                 case QUEEN:
-                    all_attacked |= get_queen_moves(square, state.color_bbs[color], state.color_bbs[other_color]);
+                    all_attacked |= get_queen_moves(square, 0ull, state.all_pieces_bb);
                     break;
                 case KING:
                     all_attacked |= king_attacks_tbl[square];

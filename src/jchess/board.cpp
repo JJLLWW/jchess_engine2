@@ -7,6 +7,20 @@
 #include <bit> // C++20 popcount
 
 namespace jchess {
+    namespace {
+        void update_castle_rights_from_corner(BoardState& state, Square corner) {
+            if(corner == A1) {
+                state.castle_right_mask &= ~WHITE_QS;
+            } else if(corner == A8) {
+                state.castle_right_mask &= ~BLACK_QS;
+            } else if(corner == H1) {
+                state.castle_right_mask &= ~WHITE_KS;
+            } else if(corner == H8) {
+                state.castle_right_mask &= ~BLACK_KS;
+            }
+        }
+    }
+
     GameState::GameState(FEN const& fen) {
         half_moves = fen.half_moves;
         full_moves = fen.full_moves;
@@ -55,6 +69,7 @@ namespace jchess {
     }
 
     // it may be worth decomposing this into private helpers.
+    // does capturing a rook update the castle rights?
     BoardState get_state_after_move(BoardState const& current, Move const& move) {
         BoardState next_state = current;
         next_state.enp_square = std::nullopt; // no enp square unless a double pawn push.
@@ -77,34 +92,31 @@ namespace jchess {
             if(castle_type) {
                 switch(castle_type.value()) {
                     case WHITE_KS:
-                        next_state.remove_piece_from_square(A8);
-                        next_state.place_piece_on_square(W_ROOK, A6);
+                        next_state.remove_piece_from_square(H1);
+                        next_state.place_piece_on_square(W_ROOK, F1);
                         break;
                     case WHITE_QS:
                         next_state.remove_piece_from_square(A1);
-                        next_state.place_piece_on_square(W_ROOK, A4);
+                        next_state.place_piece_on_square(W_ROOK, D1);
                         break;
                     case BLACK_KS:
                         next_state.remove_piece_from_square(H8);
-                        next_state.place_piece_on_square(B_ROOK, H6);
+                        next_state.place_piece_on_square(B_ROOK, F8);
                         break;
                     case BLACK_QS:
-                        next_state.remove_piece_from_square(H1);
-                        next_state.place_piece_on_square(B_ROOK, H4);
+                        next_state.remove_piece_from_square(A8);
+                        next_state.place_piece_on_square(B_ROOK, D8);
                         break;
                 }
             }
         } else if(type_from_piece(src_piece) == ROOK && is_corner_square(move.source)) {
             // moving a rook from a corner will change the castling rights.
-            if(move.source == A1) {
-                next_state.castle_right_mask &= ~WHITE_QS;
-            } else if(move.source == A8) {
-                next_state.castle_right_mask &= ~WHITE_KS;
-            } else if(move.source == H1) {
-                next_state.castle_right_mask &= ~BLACK_QS;
-            } else if(move.source == H8) {
-                next_state.castle_right_mask &= ~BLACK_KS;
-            }
+            update_castle_rights_from_corner(next_state, move.source);
+        }
+
+        // update castle rights when potentially capturing an unmoved rook
+        if(is_corner_square(move.dest)) {
+            update_castle_rights_from_corner(next_state, move.dest);
         }
 
         // handle moving the piece and possible promotions.
