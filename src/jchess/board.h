@@ -34,6 +34,5 @@ namespace jchess {
         MoveGenerator movegen;
     private:
         std::stack<BoardState> prev_board_states;
-        std::stack<Move> prev_moves; // DEBUG
     };
 }

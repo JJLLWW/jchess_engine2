@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "jchess/bitboard.h"
+#include "jchess/magic_bitboard.h"
 
 using namespace jchess;
 
@@ -26,6 +27,13 @@ TEST_CASE("rank, file and diag primitives") {
     REQUIRE(bb_from_squares({A8, B7, C6, D5, E4, F3, G2, H1}) == ANTI_DIAG_BBS[antidiag_from_square(D5)]);
 }
 
+TEST_CASE("segment between") {
+    REQUIRE(segment_between(A1, C3) == bb_from_square(B2));
+    REQUIRE(segment_between(A3, C1) == bb_from_square(B2));
+    REQUIRE(segment_between(A1, A4) == bb_from_squares({A2, A3}));
+    REQUIRE(segment_between(A1, D1) == bb_from_squares({B1, C1}));
+}
+
 TEST_CASE("ray primitives") {
     REQUIRE(bb_from_squares({B5, C6, D7, E8}) == RAY_BBS[NEAST][A4]);
 }
@@ -42,34 +50,22 @@ TEST_CASE("subsets of mask") {
 }
 
 TEST_CASE("pawn move generation") {
-    auto w_pawns = compute_all_pawn_attacks(WHITE);
-    auto b_pawns = compute_all_pawn_attacks(BLACK);
-    REQUIRE(w_pawns[D3] == bb_from_squares({C4, E4}));
-    REQUIRE(w_pawns[A2] == bb_from_squares({B3}));
-    REQUIRE(w_pawns[A8] == 0ull);
-    REQUIRE(b_pawns[D3] == bb_from_squares({C2, E2}));
-    REQUIRE(b_pawns[H2] == bb_from_squares({G1}));
-    REQUIRE(b_pawns[A1] == 0ull);
+    REQUIRE(PAWN_ATTACKS[WHITE][D3] == bb_from_squares({C4, E4}));
+    REQUIRE(PAWN_ATTACKS[WHITE][A2] == bb_from_squares({B3}));
+    REQUIRE(PAWN_ATTACKS[WHITE][A8] == 0ull);
+    REQUIRE(PAWN_ATTACKS[BLACK][D3] == bb_from_squares({C2, E2}));
+    REQUIRE(PAWN_ATTACKS[BLACK][H2] == bb_from_squares({G1}));
+    REQUIRE(PAWN_ATTACKS[BLACK][A1] == 0ull);
 }
 
 TEST_CASE("knight move generation") {
-    auto knight = compute_all_knight_attacks();
-    REQUIRE(knight[A1] == bb_from_squares({B3, C2}));
-    REQUIRE(knight[C3] == bb_from_squares({B1, A2, A4, B5, D5, E4, E2, D1}));
+    REQUIRE(KNIGHT_ATTACKS[A1] == bb_from_squares({B3, C2}));
+    REQUIRE(KNIGHT_ATTACKS[C3] == bb_from_squares({B1, A2, A4, B5, D5, E4, E2, D1}));
 }
 
 TEST_CASE("king move generation") {
-    auto king = compute_all_king_attacks();
-    REQUIRE(king[A1] == bb_from_squares({B1, B2, A2}));
-    REQUIRE(king[C3] == bb_from_squares({B3, B2, C2, D2, D3, D4, C4, B4}));
-}
-
-TEST_CASE("ray moves with blockers") {
-    Bitboard blockers = 0ull;
-    bb_add_square(blockers, D4);
-    bb_add_square(blockers, C3);
-    Bitboard rays = get_ray_attacks(blockers, SWEST, G7);
-    REQUIRE(rays == bb_from_squares({D4, E5, F6}));
+    REQUIRE(KING_ATTACKS[A1] == bb_from_squares({B1, B2, A2}));
+    REQUIRE(KING_ATTACKS[C3] == bb_from_squares({B3, B2, C2, D2, D3, D4, C4, B4}));
 }
 
 TEST_CASE("castle right bitboards") {

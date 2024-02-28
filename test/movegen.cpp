@@ -8,22 +8,15 @@
 
 using namespace jchess;
 
-TEST_CASE("DEBUG ONLY") {
-    // pos_3, depth 5, b4f4 h4g3 a5b4 c7c5 (stockfish finds b5c6 enp out of check.)
-    std::string fen = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1";
-    Board board{fen};
-    std::vector<std::string> move_strs {"b4f4", "h4g3", "a5b4", "c7c5"};
-    for(const auto& move_str : move_strs) {
-        Move move {move_str};
-        board.make_move(move);
-    }
-    auto moves = board.generate_legal_moves();
-    int i = 2;
+enum Test {VAL_1 = 2, VAL_2 = 7};
+
+// yes this is possible
+constexpr Test operator!(Test test) {
+    return (test == VAL_1) ? VAL_2 : VAL_1;
 }
 
 TEST_CASE("xray primitives") {
-    MoveGenerator gen;
-    auto moves = gen.xray_rook_moves(bb_from_squares({C1, G1}), bb_from_squares({C1, G1}), A1);
+    auto moves = xray_rook_moves(bb_from_squares({C1, G1}), bb_from_squares({C1, G1}), A1);
     auto str = bb_to_string(moves);
     REQUIRE(true);
 }
@@ -87,7 +80,7 @@ TEST_CASE("check 1") {
 }
 
 TEST_CASE("check 2") {
-    std::string fen = "r7/8/8/8/8/8/8/KB5r w KQkq - 0 1";
+    std::string fen = "rk6/8/8/8/8/8/8/KB5r w KQkq - 0 1";
     BoardState state{fen};
     MoveGenerator mg;
     auto moves = mg.get_legal_moves(state, WHITE);
@@ -96,7 +89,7 @@ TEST_CASE("check 2") {
 }
 
 TEST_CASE("check 3") {
-    std::string fen = "8/8/8/8/8/8/8/KPpr4 w KQkq c2 0 1";
+    std::string fen = "k7/8/8/8/8/8/8/KPpr4 w KQkq c2 0 1";
     BoardState state{fen};
     MoveGenerator mg;
     auto moves = mg.get_legal_moves(state, WHITE);

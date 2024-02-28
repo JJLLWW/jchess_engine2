@@ -9,7 +9,6 @@ add_library(chess_lib STATIC
     src/jchess/core.cpp
     src/jchess/uci.cpp
     src/jchess/bitboard.cpp
-    src/jchess/magic_bitboard.cpp
     src/jchess/board.cpp
     src/jchess/movegen.cpp
     src/jchess/board_state.cpp
@@ -18,6 +17,11 @@ target_include_directories(chess_lib PUBLIC src)
 
 add_executable(untitled4 src/main.cpp)
 target_link_libraries(untitled4 PRIVATE chess_lib)
+# TODO: do the equivalent of this for other compilers
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # hit constexpr limit for the rook table, this is necessary
+    target_compile_options(chess_lib PUBLIC -fconstexpr-steps=104857600)
+endif ()
 
 # attempt to use Catch2 for tests
 Include(FetchContent)
@@ -39,7 +43,6 @@ add_executable(tests
     test/core.cpp
     test/board.cpp
     test/bitboard.cpp
-    test/magic.cpp
     test/movegen.cpp
 )
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain chess_lib)

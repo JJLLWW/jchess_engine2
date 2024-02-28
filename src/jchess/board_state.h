@@ -15,7 +15,9 @@ namespace jchess {
         std::array<Piece, 64> pieces;
         std::array<Bitboard, 12> piece_bbs = {}; // one for white pawns, black kings etc.
         std::array<Bitboard, 2> color_bbs = {}; // all white and black pieces
-        std::array<Bitboard, 2> orth_slider_bb = {}; // white/black rooks and queens
+        Bitboard orth_slider_bb[2] = {}; // white/black rooks and queens
+        Bitboard diag_slider_bb[2] = {}; // white/black bishops and queens
+        Square king_sq[2] = {}; // white/black king squares
         Bitboard all_pieces_bb = 0;
     };
 

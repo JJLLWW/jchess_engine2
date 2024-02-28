@@ -16,7 +16,7 @@ TEST_CASE("Piece Helpers") {
         REQUIRE(char_from_piece(piece) == ch);
         REQUIRE(piece_from_char(ch) == piece);
     }
-    REQUIRE(piece_from(ROOK, BLACK) == B_ROOK);
+    REQUIRE((ROOK | BLACK) == B_ROOK);
 }
 
 TEST_CASE("Square Helpers") {

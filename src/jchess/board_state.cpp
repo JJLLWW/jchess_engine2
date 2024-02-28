@@ -25,6 +25,9 @@ namespace jchess {
         enp_square = fen.enp_square;
         std::fill(pieces.begin(), pieces.end(), NO_PIECE);
         for(const auto& [square, piece] : fen.pieces) {
+            if(type_from_piece(piece) == KING) {
+                king_sq[color_from_piece(piece)] = square;
+            }
             pieces[square] = piece;
             bb_add_square(piece_bbs[piece], square);
         }
@@ -32,6 +35,8 @@ namespace jchess {
         color_bbs[BLACK] = std::reduce(piece_bbs.begin() + 6, piece_bbs.end(), 0ull, std::bit_or<uint64_t>{});
         orth_slider_bb[WHITE] = piece_bbs[W_QUEEN] | piece_bbs[W_ROOK];
         orth_slider_bb[BLACK] = piece_bbs[B_QUEEN] | piece_bbs[B_ROOK];
+        diag_slider_bb[WHITE] = piece_bbs[W_QUEEN] | piece_bbs[W_BISHOP];
+        diag_slider_bb[BLACK] = piece_bbs[B_QUEEN] | piece_bbs[B_BISHOP];
         all_pieces_bb = color_bbs[WHITE] | color_bbs[BLACK];
     }
 
@@ -44,6 +49,7 @@ namespace jchess {
             bb_remove_square(piece_bbs[piece], square);
             // if not a slider, we aren't doing anything.
             bb_remove_square(orth_slider_bb[piece_color], square);
+            bb_remove_square(diag_slider_bb[piece_color], square);
             pieces[square] = NO_PIECE;
         }
     }
@@ -56,6 +62,12 @@ namespace jchess {
         bb_add_square(piece_bbs[piece], square);
         if(type == QUEEN || type == ROOK) {
             bb_add_square(orth_slider_bb[piece_color], square);
+        }
+        if(type == QUEEN || type == BISHOP) {
+            bb_add_square(diag_slider_bb[piece_color], square);
+        }
+        if(type == KING) {
+            king_sq[piece_color] = square;
         }
         pieces[square] = piece;
     }

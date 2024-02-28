@@ -79,11 +79,11 @@ namespace jchess {
         // moves that change the enp state or castle rights from the previous
         if(type_from_piece(src_piece) == PAWN && move.dest == current.enp_square) {
             // enp capture - involves a capture not at move.dest
-            Square enp_capture_square = move.dest + ((side_to_move == WHITE) ? offset_of_dir[SOUTH] : offset_of_dir[NORTH]);
+            Square enp_capture_square = move.dest + ((side_to_move == WHITE) ? SOUTH : NORTH);
             next_state.remove_piece_from_square(enp_capture_square);
         } else if(type_from_piece(src_piece) == PAWN && vertical_distance(move.source, move.dest) == 2) {
             // double pawn push - creates enp square
-            next_state.enp_square = move.source + ((side_to_move == WHITE) ? offset_of_dir[NORTH] : offset_of_dir[SOUTH]);
+            next_state.enp_square = move.source + ((side_to_move == WHITE) ? NORTH : SOUTH);
         } else if(type_from_piece(src_piece) == KING) {
             // king moves - king can no longer castle + castling involves moving associated rook
             auto side_castle_flags = (side_to_move == WHITE) ? (WHITE_QS | WHITE_KS) : (BLACK_QS | BLACK_KS);
@@ -134,7 +134,6 @@ namespace jchess {
 
     void Board::make_move(jchess::Move const& move) {
         prev_board_states.push(board_state);
-        prev_moves.push(move);
         board_state = get_state_after_move(board_state, move);
         game_state.increase_half_move();
     }
@@ -143,7 +142,6 @@ namespace jchess {
         if(prev_board_states.empty()) {
             return false;
         }
-        prev_moves.pop();
         board_state = prev_board_states.top();
         prev_board_states.pop();
         game_state.decrease_half_move();

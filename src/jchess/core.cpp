@@ -7,7 +7,6 @@
 #include <sstream>
 #include <cassert>
 #include <vector>
-#include <numeric>
 #include <algorithm>
 
 
@@ -36,18 +35,6 @@ namespace jchess {
         return square == A1 || square == A8 || square == H1 || square == H8;
     }
 
-    int horizontal_distance(Square sq1, Square sq2) {
-        int xpos1 = sq1 % 8;
-        int xpos2 = sq2 % 8;
-        return abs(xpos1 - xpos2);
-    }
-
-    int vertical_distance(Square sq1, Square sq2) {
-        int ypos1 = sq1 / 8;
-        int ypos2 = sq2 / 8;
-        return abs(ypos1 - ypos2);
-    }
-
     bool is_orthogonal_dir(Direction dir) {
         return (dir == NORTH) || (dir == SOUTH) || (dir == EAST) || (dir == WEST);
     }
@@ -61,12 +48,8 @@ namespace jchess {
         return square_from_rank_file(rank, file);
     }
 
-    Square square_from_rank_file(int rank, int file) {
-        return static_cast<Square>(rank*8 + file);
-    }
-
-    bool check_rank_file(int rank, int file) {
-        return A <= file && file <= H && 0 <= rank && rank <= 7;
+    bool is_slider(Piece piece) {
+        return type_from_piece(piece) != PAWN && type_from_piece(piece) != KNIGHT && type_from_piece(piece) != KING;
     }
 
     Piece piece_from_char(char c) {
