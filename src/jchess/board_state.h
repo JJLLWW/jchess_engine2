@@ -19,7 +19,10 @@ namespace jchess {
         Bitboard diag_slider_bb[2] = {}; // white/black bishops and queens
         Square king_sq[2] = {}; // white/black king squares
         Bitboard all_pieces_bb = 0;
+        bool in_check(Color color) const;
     };
+
+    Bitboard get_attackers_of(Square square, BoardState const &state, Color color);
 
     bool can_castle(BoardState const& state, Color color, bool queen_side, Bitboard attacked);
 }

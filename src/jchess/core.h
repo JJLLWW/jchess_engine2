@@ -31,7 +31,7 @@ namespace jchess {
     enum Piece {
         W_PAWN, W_ROOK, W_KNIGHT, W_BISHOP, W_KING, W_QUEEN,
         B_PAWN, B_ROOK, B_KNIGHT, B_BISHOP, B_KING, B_QUEEN,
-        NO_PIECE = 64
+        NO_PIECE = 12
     };
 
     constexpr Piece operator|(PieceType type, Color color) {

@@ -5,7 +5,15 @@
 #include "board_state.h"
 #include "movegen.h"
 
+#include <boost/container/static_vector.hpp>
+
 namespace jchess {
+    namespace detail {
+        // https://chess.stackexchange.com/questions/4113/longest-chess-game-possible-maximum-moves
+        constexpr int MAX_MOVES_IN_GAME = 6000;
+    }
+    using PrevStateStack = std::stack<BoardState, boost::container::static_vector<BoardState, detail::MAX_MOVES_IN_GAME>>;
+
     struct GameState {
         GameState() : GameState(FEN(starting_fen)) {}
         GameState(FEN const& fen);
@@ -25,14 +33,17 @@ namespace jchess {
         Board(FEN const& fen) { set_position(fen); }
         void set_position(FEN const& fen);
         void make_move(Move const& move);
-        std::vector<Move> generate_legal_moves();
+        void generate_legal_moves(MoveVector& moves);
         bool unmake_move();
         std::string to_string();
+        BoardState const& get_board_state() const { return board_state; }
+        Color get_side_to_move() const { return game_state.side_to_move; }
+        bool in_check() const { return board_state.in_check(game_state.side_to_move); }
     private:
         GameState game_state;
         BoardState board_state;
         MoveGenerator movegen;
     private:
-        std::stack<BoardState> prev_board_states;
+        PrevStateStack prev_board_states;
     };
 }

@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(magics src/misc/magic_finder.c)
 
+Include(FetchContent)
+
 add_library(chess_lib STATIC
     src/jchess/core.cpp
     src/jchess/uci.cpp
@@ -12,19 +14,37 @@ add_library(chess_lib STATIC
     src/jchess/board.cpp
     src/jchess/movegen.cpp
     src/jchess/board_state.cpp
+    src/jchess/search.cpp
+    src/jchess/eval.cpp
+    src/jchess/moves.cpp
+    src/jchess/temp_eval.cpp
+    src/jchess/engine.cpp
 )
 target_include_directories(chess_lib PUBLIC src)
 
-add_executable(untitled4 src/main.cpp)
-target_link_libraries(untitled4 PRIVATE chess_lib)
-# TODO: do the equivalent of this for other compilers
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # hit constexpr limit for the rook table, this is necessary
     target_compile_options(chess_lib PUBLIC -fconstexpr-steps=104857600)
 endif ()
 
+set(BOOST_INCLUDE_LIBRARIES container)
+set(BOOST_ENABLE_CMAKE ON)
+
+include(FetchContent)
+FetchContent_Declare(
+    Boost
+    GIT_REPOSITORY https://github.com/boostorg/boost.git
+    GIT_TAG boost-1.84.0
+)
+FetchContent_MakeAvailable(Boost)
+
+target_link_libraries(chess_lib PUBLIC Boost::container)
+
+
+add_executable(untitled4 src/main.cpp)
+target_link_libraries(untitled4 PRIVATE chess_lib)
+
 # attempt to use Catch2 for tests
-Include(FetchContent)
 
 FetchContent_Declare(
     Catch2
@@ -43,7 +63,7 @@ add_executable(tests
     test/core.cpp
     test/board.cpp
     test/bitboard.cpp
-    test/movegen.cpp
+    test/search.cpp
 )
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain chess_lib)
 target_include_directories(tests PRIVATE src)

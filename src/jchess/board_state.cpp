@@ -1,5 +1,6 @@
 #include "board_state.h"
 #include "bitboard.h"
+#include "moves.h"
 
 #include <numeric>
 
@@ -70,5 +71,18 @@ namespace jchess {
             king_sq[piece_color] = square;
         }
         pieces[square] = piece;
+    }
+
+    Bitboard get_attackers_of(Square square, BoardState const &state, Color color) {
+        Bitboard knights = KNIGHT_ATTACKS[square] & state.piece_bbs[KNIGHT | color];
+        Bitboard ortho = get_rook_moves(square, 0ull, state.all_pieces_bb) & state.orth_slider_bb[color];
+        Bitboard diag = get_bishop_moves(square, 0ull, state.all_pieces_bb) & state.diag_slider_bb[color];
+        Bitboard pawn = PAWN_ATTACKS[!color][square] & state.piece_bbs[PAWN | color];
+        return knights | ortho | diag | pawn;
+    }
+
+    bool BoardState::in_check(Color color) const {
+        return get_attackers_of(king_sq[color], *this, color) != 0ull;
+
     }
 }

@@ -4,7 +4,6 @@
 #include <sstream>
 #include <numeric>
 #include <cassert>
-#include <bit> // C++20 popcount
 
 namespace jchess {
     namespace {
@@ -64,12 +63,11 @@ namespace jchess {
         return std::nullopt;
     }
 
-    std::vector<Move> Board::generate_legal_moves() {
-        return movegen.get_legal_moves(board_state, game_state.side_to_move);
+    void Board::generate_legal_moves(MoveVector& moves) {
+        return movegen.get_legal_moves(moves, board_state, game_state.side_to_move);
     }
 
-    // it may be worth decomposing this into private helpers.
-    // does capturing a rook update the castle rights?
+    // this is over half of the slowdown from movegen - luckily isn't allocation
     BoardState get_state_after_move(BoardState const& current, Move const& move) {
         BoardState next_state = current;
         next_state.enp_square = std::nullopt; // no enp square unless a double pawn push.
@@ -132,6 +130,7 @@ namespace jchess {
         board_state = BoardState(fen);
     }
 
+    // this is as slow as move generation - not sure how to fix at the minute.
     void Board::make_move(jchess::Move const& move) {
         prev_board_states.push(board_state);
         board_state = get_state_after_move(board_state, move);

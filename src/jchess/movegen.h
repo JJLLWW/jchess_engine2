@@ -3,34 +3,33 @@
 #include "board_state.h"
 #include "magic_bitboard.h"
 
-#include <vector>
+#include <boost/container/static_vector.hpp>
 
 namespace jchess {
-    // (NOT PIN AWARE)
-    Bitboard get_knight_moves(Square source, Bitboard own_pieces);
-    Bitboard get_bishop_moves(Square source, Bitboard own_pieces, Bitboard enemy_pieces);
-    Bitboard get_rook_moves(Square source, Bitboard own_pieces, Bitboard enemy_pieces);
-    Bitboard get_queen_moves(Square source, Bitboard own_pieces, Bitboard enemy_pieces);
-
-    // (NOT PIN AWARE)
-    Bitboard xray_rook_moves(Bitboard all_pieces, Bitboard blockers, Square rook_sq);
-    Bitboard xray_bishop_moves(Bitboard all_pieces, Bitboard blockers, Square bishop_sq);
-    Bitboard xray_queen_moves(Bitboard all_pieces, Bitboard blockers, Square queen_sq);
+    namespace detail {
+        constexpr int MAX_MOVES_IN_POS = 256;
+    }
+    using MoveVector = boost::container::static_vector<Move, detail::MAX_MOVES_IN_POS>;
 
     Bitboard get_all_attacked_squares(BoardState const& state, Color color); // BoardState method? / field?
-    Bitboard get_attackers_of(Square square, BoardState const& state, Color color); // BoardState method? / field?
 
     class MoveGenerator {
     public:
         MoveGenerator() = default;
-        std::vector<Move> get_legal_moves(BoardState const& state, Color color);
+        // user passes in the vector by non-const reference instead, maybe return number of legal moves
+        void get_legal_moves(MoveVector& moves, BoardState const& state, Color color);
     private:
-        void get_all_pawn_moves(std::vector<Move>& moves, BoardState const& state, Color color); // pin aware
+        // if these stay as members all except pin_info can be marked const
+        void get_all_pawn_moves(MoveVector& moves, BoardState const& state, Color color); // pin aware
         Bitboard get_pawn_moves(Square square, BoardState const& state, Color color); // pin aware
-        void get_king_non_castle_moves(std::vector<Move>& moves, BoardState const& state, Color color); // why member?
+        void get_king_non_castle_moves(MoveVector& moves, BoardState const& state, Color color); // why member?
         void compute_pin_info(BoardState const& state, Color color, Bitboard checker);
-        void get_all_piece_moves(std::vector<Move> &moves, PieceType type, BoardState const &state, Color color); // pin aware
+        void get_all_piece_moves(MoveVector& moves, PieceType type, BoardState const &state, Color color); // pin aware
     private:
-        std::array<Bitboard, 64> pin_masks; // can I store this info in the board state + in a more efficient way??
+        std::array<Bitboard, 64> pin_masks; // can I store this info in a more efficient way??
+        // - for king in check: can store one bitboard for squares all pieces
+        // are forced to go to, then handle the enp pawn case separately.
+        // - for normal pins: can find which squares contain pinned pieces and only set the mask for those squares.
+        // can then leave pin_masks uninitialised.
     };
 }

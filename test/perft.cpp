@@ -14,7 +14,8 @@ uint64_t perft(int depth, Board& board) {
     }
 
     uint64_t nodes = 0ull;
-    auto moves = board.generate_legal_moves();
+    MoveVector moves;
+    board.generate_legal_moves(moves);
     for(const auto& move : moves) {
         board.make_move(move);
         nodes += perft(depth - 1, board);
@@ -28,7 +29,8 @@ uint64_t perft_starting_move(int depth, Board& board) {
     assert(depth > 0);
 
     uint64_t nodes = 0ull;
-    auto moves = board.generate_legal_moves();
+    MoveVector moves;
+    board.generate_legal_moves(moves);
     for(const auto& move : moves) {
         board.make_move(move);
         uint64_t nmove = perft(depth - 1, board);

@@ -1,11 +1,12 @@
 #include "movegen.h"
 #include "bitboard.h"
+#include "moves.h"
 
 #include <cassert>
 
 namespace jchess {
     namespace {
-        void append_king_castle_moves(std::vector<Move> &moves, BoardState const &state, Bitboard attacked, Color color) {
+        void append_king_castle_moves(MoveVector &moves, BoardState const &state, Bitboard attacked, Color color) {
             Square king_sq = (color == WHITE) ? E1 : E8;
             if (can_castle(state, color, true, attacked)) { // queenside
                 Square king_dest = king_sq + WEST + WEST;
@@ -18,9 +19,9 @@ namespace jchess {
             }
         }
 
-        void append_moves_from_dest_bb(std::vector<Move> &moves, Square source, Bitboard dest_bb) {
-            auto dests = bb_get_squares(dest_bb);
-            for (auto dest: dests) {
+        void append_moves_from_dest_bb(MoveVector &moves, Square source, Bitboard dest_bb) {
+            Square dest;
+            while(pop_lsb_square(dest_bb, dest)) {
                 moves.emplace_back(source, dest);
             }
         }
@@ -61,65 +62,14 @@ namespace jchess {
         }
     } // anonymous namespace end
 
-    Bitboard get_knight_moves(Square source, Bitboard own_pieces) {
-        return KNIGHT_ATTACKS[source] & ~own_pieces;
-    }
-
-    Bitboard get_bishop_moves(Square source, Bitboard own_pieces, Bitboard enemy_pieces) {
-        Bitboard blockers = (own_pieces | enemy_pieces) & ~bb_from_square(source);
-        Bitboard with_capture_own = get_bishop_attacks(source, blockers);
-        return with_capture_own & ~own_pieces;
-    }
-
-    Bitboard get_rook_moves(Square source, Bitboard own_pieces, Bitboard enemy_pieces) {
-        Bitboard blockers = (own_pieces | enemy_pieces) & ~bb_from_square(source);
-        Bitboard with_capture_own = get_rook_attacks(source, blockers);
-        return with_capture_own & ~own_pieces;
-    }
-
-    Bitboard get_queen_moves(Square source, Bitboard own_pieces, Bitboard enemy_pieces) {
-        Bitboard bishop_moves = get_bishop_moves(source, own_pieces, enemy_pieces);
-        Bitboard rook_moves = get_rook_moves(source, own_pieces, enemy_pieces);
-        return bishop_moves | rook_moves;
-    }
-
-    Bitboard xray_rook_moves(Bitboard all_pieces, Bitboard blockers, Square rook_sq) {
-        // https://www.chessprogramming.org/X-ray_Attacks_(Bitboards)#ModifyingOccupancy
-        Bitboard attacks = get_rook_moves(rook_sq, 0ull, all_pieces);
-        blockers &= attacks;
-        return attacks ^ get_rook_moves(rook_sq, 0ull, all_pieces ^ blockers);
-    }
-
-    Bitboard xray_bishop_moves(Bitboard all_pieces, Bitboard blockers, Square bishop_sq) {
-        Bitboard attacks = get_bishop_moves(bishop_sq, 0ull, all_pieces);
-        blockers &= attacks;
-        return attacks ^ get_bishop_moves(bishop_sq, 0ull, all_pieces ^ blockers);
-    }
-
-    Bitboard xray_queen_moves(Bitboard all_pieces, Bitboard blockers, Square queen_sq) {
-        return xray_rook_moves(all_pieces, blockers, queen_sq) | xray_bishop_moves(all_pieces, blockers, queen_sq);
-    }
-
-    Bitboard get_attackers_of(Square square, BoardState const &state, Color color) {
-        Bitboard knights = KNIGHT_ATTACKS[square] & state.piece_bbs[KNIGHT | color];
-        Bitboard ortho = get_rook_moves(square, 0ull, state.all_pieces_bb) & state.orth_slider_bb[color];
-        Bitboard diag = get_bishop_moves(square, 0ull, state.all_pieces_bb) & state.diag_slider_bb[color];
-        Bitboard pawn = PAWN_ATTACKS[!color][square] & state.piece_bbs[PAWN | color];
-        return knights | ortho | diag | pawn;
-    }
-
-
-    std::vector<Move> MoveGenerator::get_legal_moves(BoardState const& state, Color color) {
-        std::vector<Move> moves; // if user passes in the container by reference don't need to allocate it
-        // every time.
-
+    void MoveGenerator::get_legal_moves(MoveVector& moves, BoardState const& state, Color color) {
         Bitboard checkers = get_attackers_of(state.king_sq[color], state, !color);
         int num_checkers = std::popcount(checkers);
 
         get_king_non_castle_moves(moves, state, color);
 
         if (num_checkers >= 2) {
-            return moves; //. if in double check can only move the king.
+            return; //. if in double check can only move the king.
         }
 
         compute_pin_info(state, color, checkers); // handle all information about pins here
@@ -135,18 +85,17 @@ namespace jchess {
         get_all_piece_moves(moves, ROOK, state, color);
         get_all_piece_moves(moves, QUEEN, state, color);
         get_all_pawn_moves(moves, state, color);
-
-        return moves;
     }
 
-    void MoveGenerator::get_all_pawn_moves(std::vector<Move> &moves, BoardState const &state, Color color) {
+    void MoveGenerator::get_all_pawn_moves(MoveVector &moves, BoardState const &state, Color color) {
         Bitboard pawns_bb = state.piece_bbs[PAWN | color];
         while (pawns_bb) {
             Square src = lsb_square_from_bb(pawns_bb);
             Bitboard dests = get_pawn_moves(src, state, color);
             Bitboard promote = back_rank_bb[color] & dests;
             append_moves_from_dest_bb(moves, src, dests & ~promote);
-            for (Square dest: bb_get_squares(promote)) {
+            Square dest;
+            while(pop_lsb_square(promote, dest)) {
                 Piece promotions[4] {KNIGHT | color, BISHOP | color, ROOK | color, QUEEN | color};
                 for (Piece promotion: promotions) {
                     moves.emplace_back(src, dest, promotion);
@@ -176,7 +125,7 @@ namespace jchess {
         return (attacks | enp | push_one | push_two) & pin_masks[square];
     }
 
-    void MoveGenerator::get_king_non_castle_moves(std::vector<Move>& moves, BoardState const&state, Color color) {
+    void MoveGenerator::get_king_non_castle_moves(MoveVector& moves, BoardState const&state, Color color) {
         Square king_sq = state.king_sq[color];
         Bitboard potential_moves = KING_ATTACKS[king_sq];
         Bitboard in_check = get_all_attacked_squares(state, !color);
@@ -237,7 +186,7 @@ namespace jchess {
 
         // case where a pawn can enp capture the checker (inefficient but rare)
         if(checker != 0ull && can_enp_capture(state, checker_sq, color)) {
-            Bitboard cap_pawns = PAWN_ATTACKS[!color][state.enp_square.value()];
+            Bitboard cap_pawns = PAWN_ATTACKS[!color][state.enp_square.value()] & state.piece_bbs[PAWN | color];
             Square sq;
             while (pop_lsb_square(cap_pawns, sq)) {
                 pin_masks[sq] |= bb_from_square(state.enp_square.value());
@@ -266,7 +215,7 @@ namespace jchess {
         }
     }
 
-    void MoveGenerator::get_all_piece_moves(std::vector<Move> &moves, PieceType type, BoardState const &state, Color color) {
+    void MoveGenerator::get_all_piece_moves(MoveVector& moves, PieceType type, BoardState const &state, Color color) {
         assert(type != KING && type != PAWN);
         Bitboard src_bb = state.piece_bbs[type | color];
         Bitboard own = state.color_bbs[color], enemy = state.color_bbs[!color];

@@ -232,8 +232,8 @@ namespace jchess {
     inline constexpr std::array<Bitboard, 15> DIAG_BBS {detail::initialise_diag_bbs()};
     inline constexpr std::array<Bitboard, 15> ANTI_DIAG_BBS {detail::initialise_anti_diag_bbs()};
 
-    inline constexpr Bitboard pawn_start_bb[2] {RANK_BBS[RANK_2], RANK_BBS[RANK_7]}; // WHITE, BLACK
-    inline constexpr Bitboard back_rank_bb[2] {RANK_BBS[RANK_8], RANK_BBS[RANK_1]}; // WHITE, BLACK
+    inline constexpr Bitboard pawn_start_bb[2] {RANK_BBS[RANK_2], RANK_BBS[RANK_7]}; // PST_WHITE, PST_BLACK
+    inline constexpr Bitboard back_rank_bb[2] {RANK_BBS[RANK_8], RANK_BBS[RANK_1]}; // PST_WHITE, PST_BLACK
 
     // usage RAY_BBS[WEST][A3]
     inline constexpr std::array<std::array<Bitboard, 64>, 8> RAY_BBS {detail::initialise_ray_bbs()};
@@ -250,11 +250,11 @@ namespace jchess {
 
     // helpers that don't have to be used at compile time to initialise magic tables:
 
-    std::vector<Bitboard> get_subsets_of_mask(Bitboard mask);
-    std::vector<Square> bb_get_squares(Bitboard bb);
+    std::vector<Bitboard> get_subsets_of_mask(Bitboard mask); // bottleneck
     Bitboard bb_from_squares(std::vector<Square> squares);
     Bitboard get_ray_between(Square sq1, Square sq2);
     Square lsb_square_from_bb(Bitboard bb);
-    bool pop_lsb_square(Bitboard& bb, Square& sq);
     Bitboard segment_between(Square sq1, Square sq2); // not including endpoints
+
+    bool pop_lsb_square(Bitboard& bb, Square& sq);
 }

@@ -5,6 +5,7 @@
 #include <fstream>
 #include <cassert>
 #include <unordered_set>
+#include <chrono>
 
 #include <nlohmann/json.hpp>
 
@@ -19,7 +20,8 @@ uint64_t perft(int depth, Board& board) {
     }
 
     uint64_t nodes = 0ull;
-    auto moves = board.generate_legal_moves();
+    MoveVector moves;
+    board.generate_legal_moves(moves);
     for(const auto& move : moves) {
         board.make_move(move);
         nodes += perft(depth - 1, board);
@@ -30,10 +32,20 @@ uint64_t perft(int depth, Board& board) {
 }
 
 void perft_one_case(int max_depth, std::string const& fen, std::vector<uint64_t> const& expected) {
+    using std::chrono::high_resolution_clock;
+    using std::chrono::duration;
+
     Board board{fen};
     for(int depth = 1; depth <= max_depth; ++depth) {
+        auto t1 = high_resolution_clock::now();
         uint64_t actual = perft(depth, board);
-        std::cout << "depth: " << depth << " actual: " << actual << " expected: " << expected[depth-1] << std::endl;
+        auto t2 = high_resolution_clock::now();
+        auto n_ms = duration<double, std::milli>(t2 - t1);
+        std::cout
+            << "depth: " << depth
+            << " actual: " << actual
+            << " expected: " << expected[depth-1]
+            << " time: " << n_ms.count() << "ms" << std::endl;
     }
 }
 
