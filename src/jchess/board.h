@@ -33,12 +33,13 @@ namespace jchess {
         Board(FEN const& fen) { set_position(fen); }
         void set_position(FEN const& fen);
         void make_move(Move const& move);
-        void generate_legal_moves(MoveVector& moves);
+        void generate_legal_moves(MoveVector& moves, GenPolicy policy = GenPolicy::LEGAL);
         bool unmake_move();
         std::string to_string();
         BoardState const& get_board_state() const { return board_state; }
         Color get_side_to_move() const { return game_state.side_to_move; }
         bool in_check() const { return board_state.in_check(game_state.side_to_move); }
+        uint64_t zobrist_hash() const;
     private:
         GameState game_state;
         BoardState board_state;

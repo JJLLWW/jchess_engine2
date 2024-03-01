@@ -4,6 +4,7 @@ project(untitled4)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(magics src/misc/magic_finder.c)
+add_executable(zobrist src/misc/zobrist_constant_gen.cpp)
 
 Include(FetchContent)
 
@@ -64,6 +65,7 @@ add_executable(tests
     test/board.cpp
     test/bitboard.cpp
     test/search.cpp
+    test/movegen.cpp
 )
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain chess_lib)
 target_include_directories(tests PRIVATE src)

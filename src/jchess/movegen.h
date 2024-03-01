@@ -13,23 +13,24 @@ namespace jchess {
 
     Bitboard get_all_attacked_squares(BoardState const& state, Color color); // BoardState method? / field?
 
+    enum class GenPolicy {
+        LEGAL,
+        ONLY_CAPTURES
+    };
+
     class MoveGenerator {
     public:
         MoveGenerator() = default;
         // user passes in the vector by non-const reference instead, maybe return number of legal moves
-        void get_legal_moves(MoveVector& moves, BoardState const& state, Color color);
+        void get_legal_moves(MoveVector& moves, BoardState const& state, Color color, GenPolicy policy = GenPolicy::LEGAL);
     private:
         // if these stay as members all except pin_info can be marked const
         void get_all_pawn_moves(MoveVector& moves, BoardState const& state, Color color); // pin aware
         Bitboard get_pawn_moves(Square square, BoardState const& state, Color color); // pin aware
         void get_king_non_castle_moves(MoveVector& moves, BoardState const& state, Color color); // why member?
-        void compute_pin_info(BoardState const& state, Color color, Bitboard checker);
+        void compute_dest_masks(BoardState const& state, Color color, Bitboard checker, GenPolicy policy);
         void get_all_piece_moves(MoveVector& moves, PieceType type, BoardState const &state, Color color); // pin aware
     private:
-        std::array<Bitboard, 64> pin_masks; // can I store this info in a more efficient way??
-        // - for king in check: can store one bitboard for squares all pieces
-        // are forced to go to, then handle the enp pawn case separately.
-        // - for normal pins: can find which squares contain pinned pieces and only set the mask for those squares.
-        // can then leave pin_masks uninitialised.
+        std::array<Bitboard, 64> allowed_dest_mask; // can I store this info in a more efficient way??
     };
 }

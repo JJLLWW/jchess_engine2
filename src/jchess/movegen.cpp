@@ -62,9 +62,11 @@ namespace jchess {
         }
     } // anonymous namespace end
 
-    void MoveGenerator::get_legal_moves(MoveVector& moves, BoardState const& state, Color color) {
+    void MoveGenerator::get_legal_moves(MoveVector& moves, BoardState const& state, Color color, GenPolicy policy) {
         Bitboard checkers = get_attackers_of(state.king_sq[color], state, !color);
         int num_checkers = std::popcount(checkers);
+
+        compute_dest_masks(state, color, checkers, policy); // handle all information about pins here
 
         get_king_non_castle_moves(moves, state, color);
 
@@ -72,9 +74,7 @@ namespace jchess {
             return; //. if in double check can only move the king.
         }
 
-        compute_pin_info(state, color, checkers); // handle all information about pins here
-
-        if (num_checkers == 0) {
+        if (num_checkers == 0 && policy != GenPolicy::ONLY_CAPTURES) {
             // castling only possible if not in check
             Bitboard attacked = get_all_attacked_squares(state, !color);
             append_king_castle_moves(moves, state, attacked, color);
@@ -122,7 +122,7 @@ namespace jchess {
         if (push_one && (bb_from_square(square) & pawn_start_bb[color])) {
             push_two = bb_from_square(square + push_dir + push_dir) & ~state.all_pieces_bb;
         }
-        return (attacks | enp | push_one | push_two) & pin_masks[square];
+        return (attacks | enp | push_one | push_two) & allowed_dest_mask[square];
     }
 
     void MoveGenerator::get_king_non_castle_moves(MoveVector& moves, BoardState const&state, Color color) {
@@ -130,6 +130,7 @@ namespace jchess {
         Bitboard potential_moves = KING_ATTACKS[king_sq];
         Bitboard in_check = get_all_attacked_squares(state, !color);
         Bitboard dests = potential_moves & ~(in_check | state.color_bbs[color]);
+        dests &= allowed_dest_mask[king_sq];
         append_moves_from_dest_bb(moves, king_sq, dests);
     }
 
@@ -165,7 +166,7 @@ namespace jchess {
         return all_attacked;
     }
 
-    void MoveGenerator::compute_pin_info(BoardState const &state, Color color, Bitboard checker) {
+    void MoveGenerator::compute_dest_masks(BoardState const &state, Color color, Bitboard checker, GenPolicy policy) {
         Square king_sq = state.king_sq[color];
         Bitboard own_pieces = state.color_bbs[color];
 
@@ -182,14 +183,19 @@ namespace jchess {
                 default_mask |= segment_between(king_sq, checker_sq);
             }
         }
-        std::fill(pin_masks.begin(), pin_masks.end(), default_mask);
+
+        if(policy == GenPolicy::ONLY_CAPTURES) {
+            default_mask &= state.color_bbs[!color];
+        }
+
+        std::fill(allowed_dest_mask.begin(), allowed_dest_mask.end(), default_mask);
 
         // case where a pawn can enp capture the checker (inefficient but rare)
         if(checker != 0ull && can_enp_capture(state, checker_sq, color)) {
             Bitboard cap_pawns = PAWN_ATTACKS[!color][state.enp_square.value()] & state.piece_bbs[PAWN | color];
             Square sq;
             while (pop_lsb_square(cap_pawns, sq)) {
-                pin_masks[sq] |= bb_from_square(state.enp_square.value());
+                allowed_dest_mask[sq] |= bb_from_square(state.enp_square.value());
             }
         }
 
@@ -209,7 +215,7 @@ namespace jchess {
                 Bitboard pinned = dir_ray & RECTANGLE_BETWEEN[king_sq][pinner_sq] & own_pieces;
                 if (pinned) {
                     Square pinned_sq = lsb_square_from_bb(pinned);
-                    pin_masks[pinned_sq] &= dir_ray;// should be &= in case of double pin.
+                    allowed_dest_mask[pinned_sq] &= dir_ray;// should be &= in case of double pin.
                 }
             }
         }
@@ -221,7 +227,7 @@ namespace jchess {
         Bitboard own = state.color_bbs[color], enemy = state.color_bbs[!color];
         while (src_bb) {
             Square src = lsb_square_from_bb(src_bb);
-            Bitboard dests_bb = get_slider_and_knight_moves(type, src, own, enemy) & pin_masks[src];
+            Bitboard dests_bb = get_slider_and_knight_moves(type, src, own, enemy) & allowed_dest_mask[src];
             append_moves_from_dest_bb(moves, src, dests_bb);
             src_bb &= src_bb - 1;
         }

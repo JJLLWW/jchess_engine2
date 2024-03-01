@@ -11,27 +11,35 @@ namespace jchess {
 
     constexpr Score DRAW_SCORE = 0;
 
-    // TEMPORARY:
-    Score quiesence_search(Score alpha, Score beta, Board& board);
+    struct SearchLimits {
+        long long max_time_ms = 0;
+        uint64_t max_nodes = 0;
+    };
 
+    // the best_move and best_score don't really belong here.
     struct SearchInfo {
-        Score best_score = MIN_SCORE;
         Move best_move {"0000"};
         uint64_t num_nodes = 0;
         uint64_t time_micros = 0;
+        bool terminated = false;
+        int depth = 0;
     };
 
-    // enough elaborate state to justify a class
+    // transposition tables would be useful here
+
     class Searcher {
     public:
-        SearchInfo search(int depth, Board& board);
+        SearchInfo search(Board& board, SearchLimits const& limits);
     private:
-        // iterative deepening?
-        Score alpha_beta_search(int depth, Board& board, Score alpha, Score beta, bool root = false);
+        SearchInfo iterative_deepening_search(Board& board);
+        Score alpha_beta_search(int depth, Board& board, Score alpha, Score beta, Move& best_move, bool root = false);
+        Score quiesence_search(Score alpha, Score beta, Board& board);
+        bool search_should_stop();
     private:
         using Clock = std::chrono::system_clock;
         // time in the future where need to stop the search
         std::chrono::time_point<Clock> cutoff {Clock::now() + std::chrono::years(10)};
+        uint64_t node_limit = -1ull;
         SearchInfo search_info {};
     };
 }

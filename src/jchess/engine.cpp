@@ -1,7 +1,6 @@
 #include "engine.h"
 
 #include <iostream>
-#include <chrono>
 #include <thread> // sleep_until
 
 namespace jchess {
@@ -45,16 +44,11 @@ namespace jchess {
     }
 
     void Engine::handle_uci_go(jchess::UciGo const& go) {
-        using namespace std::chrono;
+        SearchLimits limits;
+        limits.max_time_ms = go.movetime;
 
-        search_limit = go.movetime; // search for exactly this time in ms
-        auto stop_timestamp = system_clock::now() + milliseconds(search_limit);
-
-        // do some kind of time limited search (here don't timeout)
-        auto info = searcher.search(3, board);
-
-        // you asked for the "search" to take exactly movetime ms
-        std::this_thread::sleep_until(stop_timestamp);
+        // for now only handle searches where client has given an explicit timeout
+        auto info = searcher.search(board, limits);
 
         // return the "best" move as a bestmove command
         std::cout << "bestmove " << move_to_string(info.best_move) << std::endl;
