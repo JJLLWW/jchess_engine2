@@ -159,7 +159,7 @@ namespace jchess {
         Move(Square source, Square dest, Piece promotion) : source{source}, dest{dest}, promotion{promotion} {}
         Square source;
         Square dest;
-        Piece promotion = NO_PIECE;
+        Piece promotion = NO_PIECE; // should't this be a piece type?
         bool is_null_move = false;
     };
 

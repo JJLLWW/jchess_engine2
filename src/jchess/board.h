@@ -39,7 +39,8 @@ namespace jchess {
         BoardState const& get_board_state() const { return board_state; }
         Color get_side_to_move() const { return game_state.side_to_move; }
         bool in_check() const { return board_state.in_check(game_state.side_to_move); }
-        uint64_t zobrist_hash() const;
+        uint64_t zobrist_hash() const; // TEMPORARY
+        bool can_enp_capture() const;
     private:
         GameState game_state;
         BoardState board_state;

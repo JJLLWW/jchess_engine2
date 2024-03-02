@@ -196,4 +196,20 @@ namespace jchess {
         }
         return hash_val;
     }
+
+    bool Board::can_enp_capture() const {
+        Color color = game_state.side_to_move;
+        if(!board_state.enp_square.has_value()) {
+            return false;
+        }
+        Square enp = board_state.enp_square.value();
+        Bitboard squares = PAWN_ATTACKS[!color][enp];
+        Square src;
+        while(pop_lsb_square(squares, src)) {
+            if(board_state.pieces[src] == (PAWN | color)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

@@ -20,6 +20,7 @@ add_library(chess_lib STATIC
     src/jchess/moves.cpp
     src/jchess/temp_eval.cpp
     src/jchess/engine.cpp
+    src/jchess/polyglot/pg_reader.cpp
 )
 target_include_directories(chess_lib PUBLIC src)
 
@@ -38,9 +39,14 @@ FetchContent_Declare(
     GIT_TAG boost-1.84.0
 )
 FetchContent_MakeAvailable(Boost)
-
 target_link_libraries(chess_lib PUBLIC Boost::container)
 
+FetchContent_Declare(
+    Mio
+    GIT_REPOSITORY https://github.com/vimpunk/mio
+)
+FetchContent_MakeAvailable(Mio)
+target_link_libraries(chess_lib PUBLIC mio::mio)
 
 add_executable(untitled4 src/main.cpp)
 target_link_libraries(untitled4 PRIVATE chess_lib)
@@ -66,6 +72,7 @@ add_executable(tests
     test/bitboard.cpp
     test/search.cpp
     test/movegen.cpp
+    test/polyglot_util.cpp
 )
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain chess_lib)
 target_include_directories(tests PRIVATE src)

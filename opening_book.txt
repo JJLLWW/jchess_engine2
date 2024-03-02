@@ -1,0 +1,42 @@
+"polyglot" format seems close enough to standard.
+format: http://hgm.nubati.net/book_format.html
+
+endian
+"The entries are ordered according to key. Lowest key first." <- hash table or memory mapped file?
+(cross platform mmap equivalent? <- mio library https://github.com/vimpunk/mio),
+- would want ummap_source, make_mmap_source(path_or_file, 0, mio::map_entire_file, error);
+- data() method gives pointer to start of the mapping
+- assumedly iterators are byte by byte
+- would need to then get the number of entries, is there some way to still be able to use std::binary_search?
+- yeah just use a comparator which compares the entry at that offset.
+
+16 byte entry:
+key    uint64 - 8 byte - zobrist hash of position - uses some 781 zobrist constants (hardcoded)
+move   uint16 - 2 byte - (*)
+weight uint16 - 2 byte - (approximately move quality - not sure if actually used)
+learn  uint32 - 4 byte - don't care
+
+(*) move format:
+bits                meaning
+===================================
+0,1,2               to file
+3,4,5               to row
+6,7,8               from file
+9,10,11             from row
+12,13,14            promotion piece (0 none, 1 knight, 2 bishop, 3 rook, 4 queen)
+
+(castling format)
+white short      e1h1
+white long       e1a1
+black short      e8h8
+black long       e8a8
+
+(zobrist values) key=piece^castle^enpassant^turn;
+Piece     (offset:   0, length: 768) - offset_piece=64*kind_of_piece+8*row+file;
+Castle    (offset: 768, length:   4) <- castle = 0 if no castling possible
+EnPassant (offset: 772, length:   8) <- still file of enp square, enpassant=0 if no enp square
+Turn      (offset: 780, length:   1) <- use value if white to move, else turn=0 for black
+
+kind_of_piece
+black pawn    0 white pawn    1 black knight  2 white knight  3 black bishop  4 white bishop  5
+black rook    6 white rook    7 black queen   8 white queen   9 black king   10 white king   11
