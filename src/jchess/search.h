@@ -4,6 +4,7 @@
 #include "board.h"
 
 #include <chrono>
+#include <iostream>
 
 namespace jchess {
     constexpr Score MIN_SCORE = -1000000;
@@ -12,11 +13,10 @@ namespace jchess {
     constexpr Score DRAW_SCORE = 0;
 
     struct SearchLimits {
-        long long max_time_ms = 0;
+        long long max_time_ms = 0; // milliseconds
         uint64_t max_nodes = 0;
     };
 
-    // the best_move and best_score don't really belong here.
     struct SearchInfo {
         Move best_move {"0000"};
         uint64_t num_nodes = 0;
@@ -25,8 +25,10 @@ namespace jchess {
         int depth = 0;
     };
 
-    // transposition tables would be useful here
+    std::ostream& operator<<(std::ostream& os, SearchInfo const& info);
 
+    // transposition tables would be useful here
+    // TODO: handle 3 move repetition rule correctly in scoring
     class Searcher {
     public:
         SearchInfo search(Board& board, SearchLimits const& limits);

@@ -130,7 +130,6 @@ namespace jchess {
         Bitboard potential_moves = KING_ATTACKS[king_sq];
         Bitboard in_check = get_all_attacked_squares(state, !color);
         Bitboard dests = potential_moves & ~(in_check | state.color_bbs[color]);
-        dests &= allowed_dest_mask[king_sq];
         append_moves_from_dest_bb(moves, king_sq, dests);
     }
 

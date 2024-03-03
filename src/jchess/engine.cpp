@@ -3,11 +3,17 @@
 #include <iostream>
 #include <fstream>
 #include <thread> // sleep_until
+#include <sstream>
+
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
 
 namespace jchess {
     namespace {
+        std::string opening_book_file = "./data/baron30.bin";  // hard code for now
+
         FeatureFlags read_from_config(std::string const& cfg_path) {
-            // be a bit hacky here
+            // if we can't read the file, just carry on, it's not essential
             std::ifstream fflag_file{cfg_path};
             std::string line;
             FeatureFlags flags = 0ull;
@@ -22,9 +28,11 @@ namespace jchess {
             }
             return flags;
         }
+
+        auto engine_logger = spdlog::basic_logger_st("engine_logger", "logs/engine.txt", true);
     }
+
     void uci_loop_with_engine(std::istream& input, Engine& engine) {
-        // just ignore setoption for now
         const auto uci_handler = [&engine](UciCommand const& cmd) {
             if(std::holds_alternative<UciNoArgCmd>(cmd)) {
                 engine.handle_uci_no_arg(std::get<UciNoArgCmd>(cmd));
@@ -40,7 +48,14 @@ namespace jchess {
     }
 
     Engine::Engine() {
-        feature_flags = read_from_config("../data/feature_flags.cfg");
+        // TODO: cleanup logging
+        spdlog::set_default_logger(engine_logger);
+        spdlog::set_level(spdlog::level::debug);
+        feature_flags = read_from_config("./data/feature_flags.cfg");
+        if(feature_flags & FF_OPENING_BOOK) {
+            book.map_file(opening_book_file);
+            out_of_book = false;
+        }
     }
 
     void Engine::handle_uci_no_arg(jchess::UciNoArgCmd const& cmd) {
@@ -75,6 +90,7 @@ namespace jchess {
             if(!move.has_value()) {
                 out_of_book = true;
             } else {
+                spdlog::debug("Book Move: {0}", move_to_string(move.value()));
                 std::cout << "bestmove " << move_to_string(move.value()) << std::endl;
                 return;
             }
@@ -84,6 +100,9 @@ namespace jchess {
         SearchLimits limits;
         limits.max_time_ms = go.movetime;
         auto info = searcher.search(board, limits);
+        std::ostringstream oss;
+        oss << info;
+        spdlog::debug("Search Info: {0}", oss.str());
         std::cout << "bestmove " << move_to_string(info.best_move) << std::endl;
     }
 
@@ -92,7 +111,7 @@ namespace jchess {
             if(cmd.value == "true") {
                 feature_flags |= FF_OPENING_BOOK;
                 out_of_book = false;
-                book.map_file("../data/baron30.bin"); // hard code for now
+                book.map_file(opening_book_file);
             } else {
                 feature_flags &= ~FF_OPENING_BOOK;
             }

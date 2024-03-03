@@ -164,6 +164,9 @@ namespace jchess {
     }
 
     std::string move_to_string(Move const& move) {
+        if(move.is_null_move) {
+            return "0000";
+        }
         std::string res = square_to_string(move.source);
         res += square_to_string(move.dest);
         return res;

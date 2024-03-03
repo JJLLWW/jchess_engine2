@@ -4,17 +4,30 @@
 
 namespace jchess {
     SearchInfo Searcher::iterative_deepening_search(Board& board) {
-        const int MAX_DEPTH = 10; // for now
-        SearchInfo prev_info;
+        const int MAX_DEPTH = 10;
         for(int depth=1; depth<=MAX_DEPTH; ++depth) {
             Move iteration_best{"0000"};
             alpha_beta_search(depth, board, MIN_SCORE, MAX_SCORE, iteration_best, true);
             if(search_info.terminated) {
-                return prev_info;
+                // if there was no time to do a depth 1 search, would rather return a potentially
+                // awful move than a null move.
+                if(depth == 1) {
+                    search_info.best_move = iteration_best;
+                }
+                return search_info; // we haven't updated the move from the last iteration
             }
+            search_info.depth = depth;
             search_info.best_move = iteration_best;
         }
-        return search_info.terminated ? search_info : prev_info;
+        return search_info;
+    }
+
+    std::ostream& operator<<(std::ostream& os, SearchInfo const& info) {
+        os << "best: " << move_to_string(info.best_move) <<
+            " nodes: " << info.num_nodes <<
+            " time(micros): " << info.time_micros <<
+            " depth: " << info.depth;
+        return os;
     }
 
     SearchInfo Searcher::search(jchess::Board &board, SearchLimits const& limits) {

@@ -188,7 +188,7 @@ namespace jchess::polyglot {
         size_t l = lower.cur_index, u = upper.cur_index;
         std::random_device dev;
         std::mt19937_64 gen(dev());
-        std::uniform_int_distribution<size_t> dist(l, u);
+        std::uniform_int_distribution<size_t> dist(l, u-1);
         size_t i = dist(gen);
 
         return read_pg_move((*this)[i].move, board);

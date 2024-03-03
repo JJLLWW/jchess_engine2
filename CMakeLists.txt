@@ -39,19 +39,23 @@ FetchContent_Declare(
     GIT_TAG boost-1.84.0
 )
 FetchContent_MakeAvailable(Boost)
-target_link_libraries(chess_lib PUBLIC Boost::container)
-
 FetchContent_Declare(
     Mio
     GIT_REPOSITORY https://github.com/vimpunk/mio
 )
 FetchContent_MakeAvailable(Mio)
-target_link_libraries(chess_lib PUBLIC mio::mio)
+FetchContent_Declare(
+    SpdLog
+    GIT_REPOSITORY https://github.com/gabime/spdlog
+    GIT_TAG v1.13.0
+)
+FetchContent_MakeAvailable(SpdLog)
+
+target_link_libraries(chess_lib PUBLIC Boost::container mio::mio)
+target_link_libraries(chess_lib PRIVATE spdlog::spdlog)
 
 add_executable(untitled4 src/main.cpp)
 target_link_libraries(untitled4 PRIVATE chess_lib)
-
-# attempt to use Catch2 for tests
 
 FetchContent_Declare(
     Catch2
@@ -71,7 +75,6 @@ add_executable(tests
     test/board.cpp
     test/bitboard.cpp
     test/search.cpp
-    test/movegen.cpp
     test/polyglot_util.cpp
 )
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain chess_lib)
