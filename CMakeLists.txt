@@ -8,6 +8,14 @@ add_executable(zobrist src/misc/zobrist_constant_gen.cpp)
 
 Include(FetchContent)
 
+set(FATHOM_SRC_ROOT src/jchess/syzygy/fathom_third_party)
+
+# ultimately would want an option for whether to build this or not
+add_library(fathom_lib STATIC
+    ${FATHOM_SRC_ROOT}/tbprobe.c
+)
+target_include_directories(fathom_lib PRIVATE ${FATHOM_SRC_ROOT})
+
 add_library(chess_lib STATIC
     src/jchess/core.cpp
     src/jchess/uci.cpp
@@ -21,6 +29,7 @@ add_library(chess_lib STATIC
     src/jchess/temp_eval.cpp
     src/jchess/engine.cpp
     src/jchess/polyglot/pg_reader.cpp
+    src/jchess/syzygy/sz_wrapper.cpp
 )
 target_include_directories(chess_lib PUBLIC src)
 
@@ -55,7 +64,7 @@ target_link_libraries(chess_lib PUBLIC Boost::container mio::mio)
 target_link_libraries(chess_lib PRIVATE spdlog::spdlog)
 
 add_executable(untitled4 src/main.cpp)
-target_link_libraries(untitled4 PRIVATE chess_lib)
+target_link_libraries(untitled4 PRIVATE chess_lib fathom_lib)
 
 FetchContent_Declare(
     Catch2
@@ -76,8 +85,9 @@ add_executable(tests
     test/bitboard.cpp
     test/search.cpp
     test/polyglot_util.cpp
+    test/syzgy.cpp
 )
-target_link_libraries(tests PRIVATE Catch2::Catch2WithMain chess_lib)
+target_link_libraries(tests PRIVATE Catch2::Catch2WithMain chess_lib fathom_lib)
 target_include_directories(tests PRIVATE src)
 
 add_executable(perft test/perft.cpp)

@@ -31,8 +31,11 @@ namespace jchess {
         UciPosition args;
         while(tokens >> token) {
             if(token == "fen") {
-                tokens >> token;
-                args.position = token;
+                args.position = "";
+                for(int i=0; i<6; ++i) {
+                    tokens >> token;
+                    args.position += (i == 5) ? token : (token + " ");
+                }
             } else if(token == "startpos") {
                 args.position = jchess::starting_fen;
             } else if(token == "moves") {

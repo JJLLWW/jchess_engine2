@@ -212,4 +212,8 @@ namespace jchess {
         }
         return false;
     }
+
+    int Board::get_num_pieces() const {
+        return std::popcount(board_state.all_pieces_bb);
+    }
 }

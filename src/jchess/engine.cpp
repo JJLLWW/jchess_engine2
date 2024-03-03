@@ -10,7 +10,12 @@
 
 namespace jchess {
     namespace {
-        std::string opening_book_file = "./data/baron30.bin";  // hard code for now
+        const EngineConfig default_engine_config {
+            .feature_flag_cfg_file = "./data/feature_flags.cfg",
+            .opening_book_file = "./data/baron30.bin",
+            .endgame_table_dir = "./tables/",
+            .endgame_dtz_depth = 5
+        };
 
         FeatureFlags read_from_config(std::string const& cfg_path) {
             // if we can't read the file, just carry on, it's not essential
@@ -24,12 +29,14 @@ namespace jchess {
                 std::string flag_name = line.substr(0, line.size() - 2);
                 if(flag_name == "FF_OPENING_BOOK" && line.back() == '1') {
                     flags |= FF_OPENING_BOOK;
+                } else if(flag_name == "FF_ENDGAME_TABLES" && line.back() == '1') {
+                    flags |= FF_ENDGAME_TABLES;
                 }
             }
             return flags;
         }
 
-        auto engine_logger = spdlog::basic_logger_st("engine_logger", "logs/engine.txt", true);
+        auto engine_logger = spdlog::basic_logger_st("engine_logger", "./logs/engine.txt", true);
     }
 
     void uci_loop_with_engine(std::istream& input, Engine& engine) {
@@ -48,13 +55,18 @@ namespace jchess {
     }
 
     Engine::Engine() {
-        // TODO: cleanup logging
+        config = default_engine_config; // user hasn't specified a config
         spdlog::set_default_logger(engine_logger);
         spdlog::set_level(spdlog::level::debug);
-        feature_flags = read_from_config("./data/feature_flags.cfg");
+        feature_flags = read_from_config(config.feature_flag_cfg_file);
         if(feature_flags & FF_OPENING_BOOK) {
-            book.map_file(opening_book_file);
+            spdlog::debug("opening book enabled");
+            book.map_file(config.opening_book_file);
             out_of_book = false;
+        }
+        if(feature_flags & FF_ENDGAME_TABLES) {
+            spdlog::debug("endgame tables enabled");
+            endgame_tables = std::make_unique<syzgy::SZEndgameTables>(config.endgame_table_dir);
         }
     }
 
@@ -85,6 +97,19 @@ namespace jchess {
     }
 
     void Engine::handle_uci_go(jchess::UciGo const& go) {
+        // we are so far into the endgame that we can lookup moves in a table rather than search
+        if((feature_flags & FF_ENDGAME_TABLES) && endgame_tables && board.get_num_pieces() <= config.endgame_dtz_depth) {
+            auto dtz_entry = endgame_tables->probe_dtz_tables(board);
+            // if there's some error with the table just fallback to regular search
+            if(dtz_entry.has_value() && !dtz_entry.value().stalemate && !dtz_entry.value().checkmate) {
+                Move move = dtz_entry.value().move;
+                spdlog::debug("DTZ Table Move: {0}", move_to_string(move));
+                std::cout << "bestmove " << move_to_string(move) << std::endl;
+                return;
+            }
+        }
+
+        // we still could find the current position in the opening book, fallback to search otherwise
         if((feature_flags & FF_OPENING_BOOK) && !out_of_book) {
             auto move = book.get_random_book_move(board);
             if(!move.has_value()) {
@@ -96,7 +121,7 @@ namespace jchess {
             }
         }
 
-        // for now only handle searches where client has given an explicit timeout
+        // we need to do a manual search as can't lookup the current position
         SearchLimits limits;
         limits.max_time_ms = go.movetime;
         auto info = searcher.search(board, limits);
@@ -111,7 +136,7 @@ namespace jchess {
             if(cmd.value == "true") {
                 feature_flags |= FF_OPENING_BOOK;
                 out_of_book = false;
-                book.map_file(opening_book_file);
+                book.map_file(config.opening_book_file);
             } else {
                 feature_flags &= ~FF_OPENING_BOOK;
             }

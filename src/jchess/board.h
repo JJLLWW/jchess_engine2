@@ -36,9 +36,11 @@ namespace jchess {
         void generate_legal_moves(MoveVector& moves, GenPolicy policy = GenPolicy::LEGAL);
         bool unmake_move();
         std::string to_string();
+        GameState const& get_game_state() const { return game_state; }
         BoardState const& get_board_state() const { return board_state; }
         Color get_side_to_move() const { return game_state.side_to_move; }
         bool in_check() const { return board_state.in_check(game_state.side_to_move); }
+        int get_num_pieces() const;
         uint64_t zobrist_hash() const; // TEMPORARY
         bool can_enp_capture() const;
     private:
