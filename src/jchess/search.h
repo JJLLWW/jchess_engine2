@@ -30,7 +30,9 @@ namespace jchess {
 
     std::ostream& operator<<(std::ostream& os, SearchInfo const& info);
 
-    // TODO: transposition tables
+    int move_ordering_rank(Move const& move, Board const& board);
+
+    // TODO: transposition tables, move ordering
     class Searcher {
     public:
         SearchInfo search(Board& board, SearchLimits const& limits);

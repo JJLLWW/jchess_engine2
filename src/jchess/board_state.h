@@ -26,7 +26,9 @@ namespace jchess {
         }
     };
 
-    Bitboard get_attackers_of(Square square, BoardState const &state, Color color);
+    bool is_attack(Square src, Square dest, PieceType type, Color color, BoardState const& state);
+
+    Bitboard get_attackers_of(Square square, BoardState const& state, Color color);
 
     bool can_castle(BoardState const& state, Color color, bool queen_side, Bitboard attacked);
 }

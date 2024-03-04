@@ -29,6 +29,26 @@ namespace jchess {
         return os;
     }
 
+    int move_ordering_rank(const Move &move, Board const& board) {
+        // checks > "good" captures > quiet > "bad" captures
+        auto state = board.get_board_state();
+        auto color = board.get_side_to_move();
+        PieceType src_type = type_from_piece(state.pieces[move.source]);
+        int check_weight = 0, capture_weight = 0;
+        // checks
+        if(is_attack(move.dest, state.king_sq[!color], src_type, color, state)) {
+            check_weight = 2;
+        }
+        // captures
+        if(state.pieces[move.dest] != NO_PIECE) {
+            PieceType dest_type = type_from_piece(state.pieces[move.dest]);
+            //  PAWN, ROOK, KNIGHT, BISHOP, KING, QUEEN
+            int type_ranks[6] = {1, 3, 2, 2, 5, 4}; // higher means better piece
+            capture_weight = type_ranks[dest_type] - type_ranks[src_type]; // [-4, 4] range
+        }
+        return check_weight + capture_weight;
+    }
+
     SearchInfo Searcher::search(jchess::Board &board, SearchLimits const& limits) {
         using namespace std::chrono;
 
@@ -75,6 +95,9 @@ namespace jchess {
             }
         }
 
+        std::sort(moves.begin(), moves.end(), [&board](Move lhs, Move rhs){
+            return move_ordering_rank(lhs, board) > move_ordering_rank(rhs, board);
+        });
         prev_pos_hashes.insert(board_hash);
         for(const Move& move : moves) {
             board.make_move(move);

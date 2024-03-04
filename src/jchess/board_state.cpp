@@ -72,6 +72,22 @@ namespace jchess {
         }
         pieces[square] = piece;
     }
+    bool is_attack(Square src, Square dest, PieceType type, Color color, BoardState const& state) {
+        switch(type) {
+            case KNIGHT:
+                return bb_from_square(dest) & get_knight_moves(src, 0ull);
+            case ROOK:
+                return bb_from_square(dest) & get_rook_moves(src, state.color_bbs[color], state.color_bbs[!color]);
+            case BISHOP:
+                return bb_from_square(dest) & get_bishop_moves(src, state.color_bbs[color], state.color_bbs[!color]);
+            case QUEEN:
+                return bb_from_square(dest) & get_queen_moves(src, state.color_bbs[color], state.color_bbs[!color]);
+            case PAWN:
+                return bb_from_square(dest) & PAWN_ATTACKS[color][src];
+            case KING:
+                return horizontal_distance(src, dest) == 1 && vertical_distance(src, dest) == 1;
+        }
+    }
 
     Bitboard get_attackers_of(Square square, BoardState const &state, Color color) {
         Bitboard knights = KNIGHT_ATTACKS[square] & state.piece_bbs[KNIGHT | color];
