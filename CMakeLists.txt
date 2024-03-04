@@ -98,6 +98,10 @@ add_executable(perft2 test/perft2.cpp)
 target_link_libraries(perft2 PRIVATE chess_lib nlohmann_json::nlohmann_json)
 target_include_directories(perft2 PRIVATE src)
 
+add_executable(search_stress test/search_stress.cpp)
+target_link_libraries(search_stress PRIVATE chess_lib)
+target_include_directories(search_stress PRIVATE src)
+
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(CTest)
 include(Catch)

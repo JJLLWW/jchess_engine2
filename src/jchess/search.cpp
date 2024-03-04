@@ -3,9 +3,8 @@
 #include <algorithm>
 
 namespace jchess {
-    SearchInfo Searcher::iterative_deepening_search(Board& board) {
-        const int MAX_DEPTH = 10;
-        for(int depth=1; depth<=MAX_DEPTH; ++depth) {
+    SearchInfo Searcher::iterative_deepening_search(Board& board, int max_depth) {
+        for(int depth=1; depth<=max_depth; ++depth) {
             Move iteration_best{"0000"};
             alpha_beta_search(depth, board, MIN_SCORE, MAX_SCORE, iteration_best, true);
             if(search_info.terminated) {
@@ -40,8 +39,7 @@ namespace jchess {
             cutoff = Searcher::Clock::now() + milliseconds(limits.max_time_ms);
         }
         auto t1 = Searcher::Clock::now();
-        // limits should eventually support an explicit ply depth where deepening doesn't make sense
-        iterative_deepening_search(board);
+        iterative_deepening_search(board, limits.depth == 0 ? DEFAULT_MAX_DEPTH : limits.depth);
         auto t2 = Searcher::Clock::now();
 
         auto elapsed = duration_cast<microseconds>(t2 - t1);
@@ -60,6 +58,11 @@ namespace jchess {
             return 0;
         }
 
+        uint64_t board_hash = std::hash<Board>{}(board);
+        if(prev_pos_hashes.contains(board_hash)) {
+            return DRAW_SCORE; // can get a stalemate through 3fold repetition
+        }
+
         MoveVector moves;
         board.generate_legal_moves(moves);
         search_info.num_nodes += moves.size();
@@ -72,11 +75,13 @@ namespace jchess {
             }
         }
 
+        prev_pos_hashes.insert(board_hash);
         for(const Move& move : moves) {
             board.make_move(move);
             Score score = -alpha_beta_search(depth - 1, board, -beta, -alpha, best_move);
             board.unmake_move();
             if(score >= beta) { // impossible if at root node
+                prev_pos_hashes.erase(board_hash);
                 return beta;
             }
             if(root && score > alpha) {
@@ -86,13 +91,16 @@ namespace jchess {
 
             if(search_should_stop()) {
                 search_info.terminated = true;
+                prev_pos_hashes.erase(board_hash);
                 return 0;
             }
         }
+        prev_pos_hashes.erase(board_hash);
+
         return alpha;
     }
 
-    // play all captures until none available
+    // play all captures until none available - should this also be cancellable?
     Score Searcher::quiesence_search(Score alpha, Score beta, Board& board) {
         Score score = eval(board);
         if(score >= beta) {

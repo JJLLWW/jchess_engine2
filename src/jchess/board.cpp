@@ -9,6 +9,7 @@ namespace jchess {
     namespace { // zobrist hash hardcoded constants.
         // https://www.chessprogramming.org/Zobrist_Hashing
         constexpr int NUM_ZOBRIST_VALS = 781;
+        constexpr int ZOB_PIECE_OFFSET = 0;
         constexpr int ZOB_SIDE_OFFSET = 12*64;
         constexpr int ZOB_CASTLE_OFFSET = 12*64+1;
         constexpr int ZOB_ENP_FILE_OFFSET = 12*64+1+4;
@@ -36,23 +37,6 @@ namespace jchess {
         side_to_move = fen.side_to_move;
     }
 
-    void GameState::increase_half_move() {
-        ++half_moves;
-        if(side_to_move == BLACK) {
-            ++full_moves;
-        }
-        side_to_move = (side_to_move == WHITE) ? BLACK : WHITE;
-    }
-
-    void GameState::decrease_half_move() {
-        assert(half_moves != 0);
-        --half_moves;
-        if(side_to_move == WHITE) {
-            --full_moves;
-        }
-        side_to_move = (side_to_move == WHITE) ? BLACK : WHITE;
-    }
-
     std::optional<CastleBits> get_move_castle_type(BoardState const& state, Move const& move) {
         // better way?
         Piece src_piece = state.pieces[move.source];
@@ -77,7 +61,27 @@ namespace jchess {
         return movegen.get_legal_moves(moves, board_state, game_state.side_to_move, policy);
     }
 
-    // this is over half of the slowdown from movegen - luckily isn't allocation
+    GameState get_game_state_after_move(Board const& board, Move const& move) {
+        auto board_state = board.get_board_state();
+        GameState next_state = board.get_game_state();
+        auto move_piece = board_state.pieces[move.source];
+        bool is_capture = board_state.pieces[move.dest] != NO_PIECE;
+        // enp capture
+        is_capture |= (type_from_piece(move_piece) == PAWN && move.dest == board_state.enp_square);
+
+        if(color_from_piece(move_piece) == BLACK) {
+            ++next_state.full_moves;
+        }
+        if(type_from_piece(move_piece) == PAWN || is_capture) {
+            next_state.half_moves = 0;
+        } else {
+            ++next_state.half_moves;
+        }
+
+        next_state.side_to_move = !next_state.side_to_move;
+        return next_state;
+    }
+
     BoardState get_state_after_move(BoardState const& current, Move const& move) {
         BoardState next_state = current;
         next_state.enp_square = std::nullopt; // no enp square unless a double pawn push.
@@ -140,11 +144,11 @@ namespace jchess {
         board_state = BoardState(fen);
     }
 
-    // this is as slow as move generation - not sure how to fix at the minute.
     void Board::make_move(jchess::Move const& move) {
         prev_board_states.push(board_state);
+        prev_game_states.push(game_state);
+        game_state = get_game_state_after_move(*this, move);
         board_state = get_state_after_move(board_state, move);
-        game_state.increase_half_move();
     }
 
     bool Board::unmake_move() {
@@ -153,7 +157,8 @@ namespace jchess {
         }
         board_state = prev_board_states.top();
         prev_board_states.pop();
-        game_state.decrease_half_move();
+        game_state = prev_game_states.top();
+        prev_game_states.pop();
         return true;
     }
 
@@ -167,34 +172,6 @@ namespace jchess {
             oss << std::endl;
         }
         return oss.str();
-    }
-
-    uint64_t Board::zobrist_hash() const {
-        uint64_t hash_val = 0ull;
-        // pieces : faster way than looping?
-        for(Square sq=A1; sq<NUM_SQUARES; ++sq) {
-            if(board_state.pieces[sq] != NO_PIECE) {
-                int index = static_cast<int>(sq) * board_state.pieces[sq];
-                hash_val ^= zobrist_values[index];
-            }
-        }
-        // side
-        if(game_state.side_to_move == BLACK) {
-            ;hash_val ^= zobrist_values[ZOB_SIDE_OFFSET];
-        }
-        // castle rights
-        CastleBits castle_types[4] = {WHITE_KS, WHITE_QS, BLACK_KS, BLACK_QS};
-        for(int i=0; i<4; ++i) {
-            if(board_state.castle_right_mask & castle_types[i]) {
-                hash_val ^= zobrist_values[ZOB_CASTLE_OFFSET + i];
-            }
-        }
-        // enp
-        if(board_state.enp_square.has_value()) {
-            int enp_file = file_of(board_state.enp_square.value());
-            hash_val ^= zobrist_values[ZOB_ENP_FILE_OFFSET + enp_file];
-        }
-        return hash_val;
     }
 
     bool Board::can_enp_capture() const {
@@ -216,4 +193,72 @@ namespace jchess {
     int Board::get_num_pieces() const {
         return std::popcount(board_state.all_pieces_bb);
     }
+
+    int Board::get_num_pawns() const {
+        return std::popcount(board_state.piece_bbs[PAWN | WHITE] | board_state.piece_bbs[PAWN | BLACK]);
+    }
+
+    uint64_t ZobristHasher::hash_board(jchess::Board const&board) const {
+        BoardState state = board.get_board_state();
+        int enp_offset = get_enp_offset(board);
+
+        uint64_t piece = 0ull;
+        for(Square sq=A1; sq<NUM_SQUARES; ++sq) {
+            int piece_offset = get_piece_offset(sq, state.pieces[sq]);
+            if(piece_offset != NO_OFFSET) {
+                piece ^= hash_values[piece_start + piece_offset];
+            }
+        }
+
+        uint64_t castle = 0ull;
+        CastleBits castle_types[4] {WHITE_QS, WHITE_KS, BLACK_QS, BLACK_KS};
+        for(CastleBits type : castle_types) {
+            int castle_offset = get_castle_offset(static_cast<CastleBits>(type & state.castle_right_mask));
+            if(castle_offset != NO_OFFSET) {
+                castle ^= hash_values[castle_start + castle_offset];
+            }
+        }
+
+        uint64_t enp = (enp_offset == NO_OFFSET) ? 0ull : hash_values[enp_start + enp_offset];
+        uint64_t turn = should_use_turn_value(board.get_side_to_move()) ? hash_values[turn_start] : 0ull;
+        return piece ^ castle ^ enp ^ turn;
+    }
+
+    BoardZobristHasher::BoardZobristHasher() : ZobristHasher(zobrist_values, ZOB_PIECE_OFFSET, ZOB_CASTLE_OFFSET, ZOB_ENP_FILE_OFFSET, ZOB_SIDE_OFFSET) {}
+
+    int BoardZobristHasher::get_piece_offset(Square square, Piece piece) const {
+        if(piece == NO_PIECE) {
+            return NO_OFFSET;
+        }
+        return static_cast<int>(square) * piece;
+    }
+
+    int BoardZobristHasher::get_castle_offset(CastleBits castle_type) const {
+        switch (castle_type) {
+            case WHITE_KS:
+                return 0;
+            case WHITE_QS:
+                return 1;
+            case BLACK_KS:
+                return 2;
+            case BLACK_QS:
+                return 3;
+            default:
+                return NO_OFFSET;
+        }
+    }
+
+    int BoardZobristHasher::get_enp_offset(const Board &board) const {
+        auto enp = board.get_board_state().enp_square;
+        if(enp.has_value()) {
+            return file_of(enp.value());
+        }
+        return NO_OFFSET;
+    }
+
+    bool BoardZobristHasher::should_use_turn_value(Color color) const {
+        return color == WHITE;
+    }
+
+
 }

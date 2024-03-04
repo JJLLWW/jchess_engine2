@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core.h"
+#include <compare>
 
 namespace jchess {
     struct BoardState {
@@ -20,6 +21,9 @@ namespace jchess {
         Square king_sq[2] = {}; // white/black king squares
         Bitboard all_pieces_bb = 0;
         bool in_check(Color color) const;
+        bool operator==(const BoardState& other) const {
+            return (piece_bbs == other.piece_bbs) && enp_square == other.enp_square;
+        }
     };
 
     Bitboard get_attackers_of(Square square, BoardState const &state, Color color);

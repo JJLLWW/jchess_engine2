@@ -6,29 +6,6 @@
 #include <optional>
 
 namespace jchess::polyglot {
-    // how would you handle endianess to make this portable?
-
-    // technically should be constexpr
-    class ZobristHasher { // should be able to move this base class out to common code
-    public:
-        ZobristHasher(const uint64_t *hash_values, int piece_start, int castle_start, int enp_start, int turn_start)
-        : hash_values{hash_values}, piece_start{piece_start}, castle_start{castle_start}, enp_start{enp_start}, turn_start{turn_start} {}
-        uint64_t hash_board(Board const& board) const;
-    private:
-        virtual int get_piece_offset(Square square, Piece piece) const = 0;
-        virtual int get_castle_offset(CastleBits castle_type) const = 0;
-        virtual int get_enp_offset(Board const& board) const = 0;
-        virtual bool should_use_turn_value(Color color) const = 0;
-    protected:
-        inline static int NO_OFFSET = -1;
-    private:
-        const uint64_t *hash_values;
-        const int piece_start;
-        const int castle_start;
-        const int enp_start;
-        const int turn_start;
-    };
-
     class PGZobristHasher final : public ZobristHasher {
     public:
         PGZobristHasher();

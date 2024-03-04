@@ -28,34 +28,6 @@ namespace jchess::polyglot {
         }
     } // anonymous namespace
 
-    uint64_t ZobristHasher::hash_board(jchess::Board const&board) const {
-        BoardState state = board.get_board_state();
-        int enp_offset = get_enp_offset(board);
-
-        uint64_t piece = 0ull;
-        for(Square sq=A1; sq<NUM_SQUARES; ++sq) {
-            int piece_offset = get_piece_offset(sq, state.pieces[sq]);
-            if(piece_offset != NO_OFFSET) {
-                piece ^= hash_values[piece_start + piece_offset];
-            }
-        }
-
-        uint64_t castle = 0ull;
-        CastleBits castle_types[4] {WHITE_QS, WHITE_KS, BLACK_QS, BLACK_KS};
-        for(CastleBits type : castle_types) {
-            int castle_offset = get_castle_offset(static_cast<CastleBits>(type & state.castle_right_mask));
-            if(castle_offset != NO_OFFSET) {
-                castle ^= hash_values[castle_start + castle_offset];
-            }
-        }
-
-        uint64_t enp = (enp_offset == NO_OFFSET) ? 0ull : hash_values[enp_start + enp_offset];
-        uint64_t turn = should_use_turn_value(board.get_side_to_move()) ? hash_values[turn_start] : 0ull;
-        return piece ^ castle ^ enp ^ turn;
-    }
-
-
-
     bool PGZobristHasher::should_use_turn_value(jchess::Color color) const {
         return color == WHITE;
     }

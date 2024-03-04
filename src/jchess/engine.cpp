@@ -98,7 +98,7 @@ namespace jchess {
 
     void Engine::handle_uci_go(jchess::UciGo const& go) {
         // we are so far into the endgame that we can lookup moves in a table rather than search
-        if((feature_flags & FF_ENDGAME_TABLES) && endgame_tables && board.get_num_pieces() <= config.endgame_dtz_depth) {
+        if((feature_flags & FF_ENDGAME_TABLES) && endgame_tables && board.get_num_pieces() - board.get_num_pawns() <= config.endgame_dtz_depth) {
             auto dtz_entry = endgame_tables->probe_dtz_tables(board);
             // if there's some error with the table just fallback to regular search
             if(dtz_entry.has_value() && !dtz_entry.value().stalemate && !dtz_entry.value().checkmate) {
