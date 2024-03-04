@@ -1,0 +1,5 @@
+(find pretrained networks)
+https://stockfishchess.org/blog/2020/introducing-nnue-evaluation/
+
+(library able to successfully read and use one)
+https://github.com/jdart1/nnue
