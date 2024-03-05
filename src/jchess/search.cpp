@@ -6,14 +6,19 @@ namespace jchess {
     SearchInfo Searcher::iterative_deepening_search(Board& board, int max_depth) {
         for(int depth=1; depth<=max_depth; ++depth) {
             Move iteration_best{"0000"};
-            alpha_beta_search(depth, board, MIN_SCORE, MAX_SCORE, iteration_best, true);
+            Score score = alpha_beta_search(depth, board, MIN_SCORE, MAX_SCORE, iteration_best, true);
+            // if we already have mate, there's no point in continuing the search
+            if(score == MAX_SCORE) {
+                search_info.best_move = iteration_best;
+                return search_info;
+            }
             if(search_info.terminated) {
-                // if there was no time to do a depth 1 search, would rather return a potentially
+                // if there was no time to even do a depth 1 search, would rather return a potentially
                 // awful move than a null move.
                 if(depth == 1) {
                     search_info.best_move = iteration_best;
                 }
-                return search_info; // we haven't updated the move from the last iteration
+                return search_info;
             }
             search_info.depth = depth;
             search_info.best_move = iteration_best;
@@ -89,7 +94,7 @@ namespace jchess {
 
         if(moves.empty()) { // move will be set to a null move if called with a "finished" position
             if(board.in_check()) {
-                return MIN_SCORE; // checkmate
+                return MIN_SCORE; // checkmate (is < alpha a problem?)
             } else {
                 return DRAW_SCORE; // stalemate
             }
@@ -103,7 +108,11 @@ namespace jchess {
             board.make_move(move);
             Score score = -alpha_beta_search(depth - 1, board, -beta, -alpha, best_move);
             board.unmake_move();
-            if(score >= beta) { // impossible if at root node
+            if(score >= beta) {
+                // if we are at the root this is only possible if we have mate
+                if(root) {
+                    best_move = move;
+                }
                 prev_pos_hashes.erase(board_hash);
                 return beta;
             }

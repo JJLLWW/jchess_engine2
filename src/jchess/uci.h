@@ -31,7 +31,7 @@ namespace jchess {
         int depth = -1;
         int nodes = -1;
         int mate = -1;
-        int movetime = 0;
+        int movetime = 0; // milliseconds
         bool infinite = false;
     };
     using UciCommand = std::variant<UciNoArgCmd, UciSetOption, UciPosition, UciGo>;

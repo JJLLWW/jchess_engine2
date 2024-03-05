@@ -42,7 +42,9 @@ namespace jchess {
     bool is_slider(Piece piece);
     PieceType type_from_piece(Piece piece);
     Piece piece_from_char(char c);
+    PieceType piece_type_from_char(char c);
     char char_from_piece(Piece piece);
+    char char_from_piece_type(PieceType type);
     Color color_from_piece(Piece piece);
 
     // values need to be contiguous as used to lookup in an array.
@@ -156,10 +158,11 @@ namespace jchess {
         Move(const char *uci_move) : Move(std::string(uci_move)) {}
         Move(std::string const& uci_move);
         Move(Square source, Square dest) : source{source}, dest{dest} {}
-        Move(Square source, Square dest, Piece promotion) : source{source}, dest{dest}, promotion{promotion} {}
+        Move(Square source, Square dest, std::optional<PieceType> promotion_type) : source{source}, dest{dest}, promotion_type{promotion_type} {}
         Square source;
         Square dest;
-        Piece promotion = NO_PIECE; // should't this be a piece type?
+//        Piece promotion = NO_PIECE; // should't this be a piece type?
+        std::optional<PieceType> promotion_type;
         bool is_null_move = false;
     };
 

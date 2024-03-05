@@ -98,8 +98,8 @@ namespace jchess {
             append_moves_from_dest_bb(moves, src, dests & ~promote);
             Square dest;
             while(pop_lsb_square(promote, dest)) {
-                Piece promotions[4] {KNIGHT | color, BISHOP | color, ROOK | color, QUEEN | color};
-                for (Piece promotion: promotions) {
+                PieceType promotions[4] {KNIGHT, BISHOP, ROOK, QUEEN};
+                for (PieceType promotion: promotions) {
                     moves.emplace_back(src, dest, promotion);
                 }
             }

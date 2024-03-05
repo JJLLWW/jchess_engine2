@@ -61,6 +61,14 @@ namespace jchess {
         return static_cast<Piece>(offset);
     }
 
+    PieceType piece_type_from_char(char c) {
+        size_t offset = piece_chars.find(static_cast<char>(toupper(c)));
+        if(offset == std::string::npos) {
+            std::string message = std::string("could not convert char '") + c + "' to piece";
+            throw std::invalid_argument(message);
+        }
+        return static_cast<PieceType>(offset);
+    }
     PieceType type_from_piece(Piece piece) {
         assert(piece != NO_PIECE);
         return static_cast<PieceType>((piece > 5) ? piece - 6 : piece);
@@ -77,6 +85,10 @@ namespace jchess {
         } else {
             return piece_chars[piece];
         }
+    }
+
+    char char_from_piece_type(PieceType type) {
+        return static_cast<char>(tolower(piece_chars[type]));
     }
 
     Color color_from_piece(Piece piece) {
@@ -158,7 +170,7 @@ namespace jchess {
             source = square_from_alg_not(uci_move.substr(0, 2));
             dest = square_from_alg_not(uci_move.substr(2, 2));
             if(uci_move.size() == 5) {
-                promotion = piece_from_char(uci_move[4]);
+                promotion_type = piece_type_from_char(uci_move[4]);
             }
         }
     }
@@ -169,6 +181,9 @@ namespace jchess {
         }
         std::string res = square_to_string(move.source);
         res += square_to_string(move.dest);
+        if(move.promotion_type.has_value()) {
+            res += char_from_piece_type(move.promotion_type.value());
+        }
         return res;
     }
 }

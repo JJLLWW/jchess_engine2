@@ -132,7 +132,7 @@ namespace jchess {
         }
 
         // handle moving the piece and possible promotions.
-        Piece dest_piece = move.promotion == NO_PIECE ? src_piece : move.promotion;
+        Piece dest_piece = !move.promotion_type.has_value() ? src_piece : move.promotion_type.value() | side_to_move;
         next_state.remove_piece_from_square(move.source);
         next_state.remove_piece_from_square(move.dest); // cryptic
         next_state.place_piece_on_square(dest_piece, move.dest);

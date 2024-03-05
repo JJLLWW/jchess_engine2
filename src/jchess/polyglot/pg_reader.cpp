@@ -77,10 +77,10 @@ namespace jchess::polyglot {
         int src_rank = (move >> 9) & 0b111;
         int promote = (move >> 12) & 0b111;
 
-        Piece promotion = NO_PIECE;
+        std::optional<PieceType> promotion;
         PieceType pg_promotions[5] {PAWN, KNIGHT, BISHOP, ROOK, QUEEN};
         if(promote != 0) {
-            promotion = pg_promotions[promote] | board.get_side_to_move();
+            promotion = pg_promotions[promote];
         }
 
         Square src = square_from_rank_file(src_rank, src_file);

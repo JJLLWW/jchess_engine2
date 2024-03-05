@@ -58,8 +58,8 @@ TEST_CASE("Moves") {
     Move move {"e4e6q"};
     REQUIRE(move.source == E4);
     REQUIRE(move.dest == E6);
-    REQUIRE(move.promotion == B_QUEEN);
-    REQUIRE(Move("e2e3").promotion == NO_PIECE);
+    REQUIRE(move.promotion_type == QUEEN);
+    REQUIRE(!Move("e2e3").promotion_type.has_value());
 }
 
 TEST_CASE("FEN parsing") {

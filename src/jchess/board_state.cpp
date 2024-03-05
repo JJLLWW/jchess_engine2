@@ -98,6 +98,6 @@ namespace jchess {
     }
 
     bool BoardState::in_check(Color color) const {
-        return get_attackers_of(king_sq[color], *this, color) != 0ull;
+        return get_attackers_of(king_sq[color], *this, !color) != 0ull;
     }
 }

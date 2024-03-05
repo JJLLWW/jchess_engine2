@@ -24,18 +24,18 @@ namespace jchess::syzgy {
             return static_cast<WDL>(fathom_wdl_res);
         }
 
-        Piece piece_from_fathom(unsigned fathom_promotion, Color color) {
+        std::optional<PieceType> piece_type_from_fathom(unsigned fathom_promotion, Color color) {
             switch (fathom_promotion) {
                 case TB_PROMOTES_NONE:
-                    return NO_PIECE;
+                    return std::nullopt;
                 case TB_PROMOTES_QUEEN:
-                    return QUEEN | color;
+                    return QUEEN;
                 case TB_PROMOTES_ROOK:
-                    return ROOK | color;
+                    return ROOK;
                 case TB_PROMOTES_BISHOP:
-                    return BISHOP | color;
+                    return BISHOP;
                 case TB_PROMOTES_KNIGHT:
-                    return KNIGHT | color;
+                    return KNIGHT;
                 default:
                     assert(false && "corrupted fathom dtz table promotion piece");
             }
@@ -91,7 +91,7 @@ namespace jchess::syzgy {
             entry.move.is_null_move = false;
             entry.move.source = static_cast<Square>(TB_GET_FROM(result));
             entry.move.dest = static_cast<Square>(TB_GET_TO(result));
-            entry.move.promotion = piece_from_fathom(TB_GET_PROMOTES(result), color);
+            entry.move.promotion_type = piece_type_from_fathom(TB_GET_PROMOTES(result), color);
             entry.dtz = TB_GET_DTZ(result);
             return entry;
         }
