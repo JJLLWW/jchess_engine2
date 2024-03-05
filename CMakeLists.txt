@@ -99,6 +99,7 @@ add_executable(tests
     test/search.cpp
     test/polyglot_util.cpp
     test/syzgy.cpp
+    test/nnue.cpp
 )
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain chess_lib fathom_lib)
 target_include_directories(tests PRIVATE src)

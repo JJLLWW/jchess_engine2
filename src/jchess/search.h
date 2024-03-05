@@ -2,10 +2,12 @@
 
 #include "eval.h"
 #include "board.h"
+#include "nnue/wrap_nnue.h"
 
 #include <chrono>
 #include <iostream>
 #include <unordered_set>
+#include <memory>
 
 namespace jchess {
     constexpr Score MIN_SCORE = -1000000;
@@ -36,6 +38,7 @@ namespace jchess {
     class Searcher {
     public:
         SearchInfo search(Board& board, SearchLimits const& limits);
+        void enable_nnue_eval(std::unique_ptr<nnue_eval::NNUEEvaluator>&& nnue_eval);
     private:
         SearchInfo iterative_deepening_search(Board& board, int max_depth = DEFAULT_MAX_DEPTH);
         Score alpha_beta_search(int depth, Board& board, Score alpha, Score beta, Move& best_move, bool root = false);
@@ -48,5 +51,6 @@ namespace jchess {
         uint64_t node_limit = -1ull;
         SearchInfo search_info {};
         std::unordered_set<uint64_t> prev_pos_hashes;
+        std::unique_ptr<nnue_eval::NNUEEvaluator> nnue_eval = nullptr;
     };
 }

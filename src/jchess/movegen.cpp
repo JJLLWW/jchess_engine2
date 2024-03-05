@@ -68,7 +68,9 @@ namespace jchess {
 
         compute_dest_masks(state, color, checkers, policy); // handle all information about pins here
 
-        get_king_non_castle_moves(moves, state, color);
+        if(policy != GenPolicy::ONLY_CAPTURES) {
+            get_king_non_castle_moves(moves, state, color);
+        }
 
         if (num_checkers >= 2) {
             return; //. if in double check can only move the king.

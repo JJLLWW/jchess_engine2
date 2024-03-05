@@ -14,6 +14,7 @@ namespace jchess {
             .feature_flag_cfg_file = "./data/feature_flags.cfg",
             .opening_book_file = "./data/baron30.bin",
             .endgame_table_dir = "./tables/",
+            .nnue_network_file = "./data/nn-04a843f8932e.nnue",
             .endgame_dtz_depth = 5
         };
 
@@ -31,6 +32,8 @@ namespace jchess {
                     flags |= FF_OPENING_BOOK;
                 } else if(flag_name == "FF_ENDGAME_TABLES" && line.back() == '1') {
                     flags |= FF_ENDGAME_TABLES;
+                } else if(flag_name == "FF_NNUE_EVAL" && line.back() == '1') {
+                    flags |= FF_NNUE_EVAL;
                 }
             }
             return flags;
@@ -54,19 +57,29 @@ namespace jchess {
         uci_loop(input, uci_handler);
     }
 
-    Engine::Engine() {
-        config = default_engine_config; // user hasn't specified a config
+    Engine::Engine() : Engine(default_engine_config) {}
+
+    Engine::Engine(EngineConfig const& config) {
         spdlog::set_default_logger(engine_logger);
         spdlog::set_level(spdlog::level::debug);
         feature_flags = read_from_config(config.feature_flag_cfg_file);
         if(feature_flags & FF_OPENING_BOOK) {
-            spdlog::debug("opening book enabled");
+            spdlog::info("opening book enabled");
             book.map_file(config.opening_book_file);
             out_of_book = false;
         }
         if(feature_flags & FF_ENDGAME_TABLES) {
-            spdlog::debug("endgame tables enabled");
+            spdlog::info("endgame tables enabled");
             endgame_tables = std::make_unique<syzgy::SZEndgameTables>(config.endgame_table_dir);
+        }
+        if(feature_flags & FF_NNUE_EVAL) {
+            spdlog::info("nnue evaluation enabled");
+            try {
+                auto nnue_eval = std::make_unique<nnue_eval::NNUEEvaluator>(config.nnue_network_file);
+                searcher.enable_nnue_eval(std::move(nnue_eval));
+            } catch(std::runtime_error& err) {
+                spdlog::warn("failed to load NNUE network file, using fallback eval: {0}", err.what());
+            }
         }
     }
 

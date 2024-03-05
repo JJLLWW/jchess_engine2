@@ -9,7 +9,7 @@ import asyncio
 async def main(time_secs: int):
     game_board = display.start()
 
-    eng_path = './cmake-build-release/untitled4'
+    eng_path = './cmake-build-debug/untitled4'
     _, engine = await chess.engine.popen_uci(eng_path)
     board = chess.Board()
     while not board.is_game_over():

@@ -123,9 +123,13 @@ namespace jchess {
         return alpha;
     }
 
-    // play all captures until none available - should this also be cancellable?
+    // somethings off here, "bad" positions can give insanely long quiesence searches > 100 deep
     Score Searcher::quiesence_search(Score alpha, Score beta, Board& board) {
-        Score score = eval(board);
+        if(search_should_stop()) {
+            search_info.terminated = true;
+            return 0;
+        }
+        Score score = nnue_eval ? nnue_eval->nnue_eval_board(board) : eval(board);
         if(score >= beta) {
             return beta;
         }
@@ -143,11 +147,20 @@ namespace jchess {
                 return beta;
             }
             alpha = std::max(alpha, score);
+
+            if(search_should_stop()) {
+                search_info.terminated = true;
+                return 0;
+            }
         }
         return alpha;
     }
 
     bool Searcher::search_should_stop() {
         return Searcher::Clock::now() > cutoff || search_info.num_nodes > node_limit;
+    }
+
+    void Searcher::enable_nnue_eval(std::unique_ptr<nnue_eval::NNUEEvaluator>&& eval) {
+        nnue_eval = std::move(eval);
     }
 }
