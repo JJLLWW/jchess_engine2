@@ -1,5 +1,9 @@
+(docs for nnue)
+https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md
+
 (find pretrained networks)
 https://stockfishchess.org/blog/2020/introducing-nnue-evaluation/
 
 (library able to successfully read and use one)
 https://github.com/jdart1/nnue
+[lib uses halfKP model, unclear how to actually use its API though]

@@ -10,12 +10,23 @@ Include(FetchContent)
 
 set(FATHOM_SRC_ROOT src/jchess/syzygy/fathom_third_party)
 
-# ultimately would want an option for whether to build this or not
+# third party in tree dependencies
 add_library(fathom_lib STATIC
     ${FATHOM_SRC_ROOT}/tbprobe.c
 )
 target_include_directories(fathom_lib PRIVATE ${FATHOM_SRC_ROOT})
 
+add_library(jdart_nnue INTERFACE)
+target_include_directories(jdart_nnue INTERFACE third_party/nnue)
+message(${CMAKE_HOST_SYSTEM_PROCESSOR})
+# TODO: check this works for non arm64 processor
+if(${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL arm64)
+    target_compile_definitions(jdart_nnue INTERFACE SIMD NEON)
+    target_compile_options(jdart_nnue INTERFACE -mcpu=apple-m1)
+else()
+    target_compile_definitions(jdart_nnue INTERFACE SIMD AVX2)
+    target_compile_options(jdart_nnue INTERFACE -mavx2 -mbmi2 -msse2)
+endif()
 add_library(chess_lib STATIC
     src/jchess/core.cpp
     src/jchess/uci.cpp
@@ -30,7 +41,9 @@ add_library(chess_lib STATIC
     src/jchess/engine.cpp
     src/jchess/polyglot/pg_reader.cpp
     src/jchess/syzygy/sz_wrapper.cpp
+    src/jchess/nnue/wrap_nnue.cpp
 )
+target_link_libraries(chess_lib PRIVATE jdart_nnue)
 target_include_directories(chess_lib PUBLIC src)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
