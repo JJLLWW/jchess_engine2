@@ -9,7 +9,13 @@ namespace jchess {
     namespace detail {
         constexpr int MAX_MOVES_IN_POS = 256;
     }
+
+    // static vector is 2x faster than vector but very difficult to debug
+#ifndef MOVE_DEBUG
     using MoveVector = boost::container::static_vector<Move, detail::MAX_MOVES_IN_POS>;
+#else
+    using MoveVector = std::vector<Move>;
+#endif
 
     Bitboard get_all_attacked_squares(BoardState const& state, Color color); // BoardState method? / field?
 

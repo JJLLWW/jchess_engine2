@@ -59,7 +59,7 @@ namespace jchess {
 
     Engine::Engine() : Engine(default_engine_config) {}
 
-    Engine::Engine(EngineConfig const& config) {
+    Engine::Engine(EngineConfig const& config) : config{config} {
         spdlog::set_default_logger(engine_logger);
         spdlog::set_level(spdlog::level::debug);
         feature_flags = read_from_config(config.feature_flag_cfg_file);
@@ -70,7 +70,12 @@ namespace jchess {
         }
         if(feature_flags & FF_ENDGAME_TABLES) {
             spdlog::info("endgame tables enabled");
-            endgame_tables = std::make_unique<syzgy::SZEndgameTables>(config.endgame_table_dir);
+            try {
+                endgame_tables = std::make_unique<syzgy::SZEndgameTables>(config.endgame_table_dir);
+            } catch(std::runtime_error& err) {
+                spdlog::warn("failed to load endgame tables, fallback to not using them");
+                endgame_tables = nullptr;
+            }
         }
         if(feature_flags & FF_NNUE_EVAL) {
             spdlog::info("nnue evaluation enabled");

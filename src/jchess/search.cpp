@@ -110,11 +110,16 @@ namespace jchess {
             board.unmake_move();
             if(score >= beta) {
                 // if we are at the root this is only possible if we have mate
-                if(root) {
+                if (root) {
                     best_move = move;
                 }
                 prev_pos_hashes.erase(board_hash);
                 return beta;
+            }
+            // edge case where if search deep enough in a mate in N position all moves will
+            // have a checkmate score, so just return one of them.
+            if(root && score == alpha && alpha == MIN_SCORE) {
+                best_move = move;
             }
             if(root && score > alpha) {
                 best_move = move;

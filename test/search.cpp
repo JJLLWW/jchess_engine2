@@ -32,3 +32,17 @@ TEST_CASE("finds mate") {
     auto info = searcher.search(board, limits);
     REQUIRE(((move_to_string(info.best_move) == "f6d8") || (move_to_string(info.best_move) == "f6g7")));
 }
+
+TEST_CASE("behaves well in losing position") {
+    // only one move for white in this position which leads to mate in 1.
+    std::string all_moves_lose = "1r6/8/8/8/8/8/K5k1/2r5 w - - 0 1";
+    Board board{all_moves_lose};
+    Searcher searcher;
+    Move best = "0000";
+    searcher.alpha_beta_search(2, board, MIN_SCORE, MAX_SCORE, best, true);
+    REQUIRE(move_to_string(best) == "a2a3");
+    // a real search can sometimes behave differently due to cancellation.
+    SearchLimits limits{ .max_nodes = 1000000};
+    auto info = searcher.search(board, limits);
+    REQUIRE(move_to_string(info.best_move) == "a2a3");
+}

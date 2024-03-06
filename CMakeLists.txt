@@ -44,6 +44,9 @@ add_library(chess_lib STATIC
     src/jchess/nnue/wrap_nnue.cpp
 )
 target_link_libraries(chess_lib PRIVATE jdart_nnue)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_definitions(chess_lib PUBLIC MOVE_DEBUG)
+endif()
 target_include_directories(chess_lib PUBLIC src)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")

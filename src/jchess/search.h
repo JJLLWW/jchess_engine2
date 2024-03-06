@@ -39,9 +39,9 @@ namespace jchess {
     public:
         SearchInfo search(Board& board, SearchLimits const& limits);
         void enable_nnue_eval(std::unique_ptr<nnue_eval::NNUEEvaluator>&& nnue_eval);
+        Score alpha_beta_search(int depth, Board& board, Score alpha, Score beta, Move& best_move, bool root = false);
     private:
         SearchInfo iterative_deepening_search(Board& board, int max_depth = DEFAULT_MAX_DEPTH);
-        Score alpha_beta_search(int depth, Board& board, Score alpha, Score beta, Move& best_move, bool root = false);
         Score quiesence_search(Score alpha, Score beta, Board& board);
         bool search_should_stop();
     private:

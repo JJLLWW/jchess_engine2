@@ -98,7 +98,10 @@ namespace jchess::syzgy {
     }
 
     SZEndgameTables::SZEndgameTables(std::string const& tables_root) {
-        tb_init(tables_root.c_str());
+        bool success = tb_init(tables_root.c_str());
+        if(!success) {
+            throw std::runtime_error("failed to load endgame tables");
+        }
     }
 
     SZEndgameTables::~SZEndgameTables() {
