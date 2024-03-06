@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.26)
-project(untitled4)
+project(jchess_engine)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -79,8 +79,8 @@ FetchContent_MakeAvailable(SpdLog)
 target_link_libraries(chess_lib PUBLIC Boost::container mio::mio)
 target_link_libraries(chess_lib PRIVATE spdlog::spdlog)
 
-add_executable(untitled4 src/main.cpp)
-target_link_libraries(untitled4 PRIVATE chess_lib fathom_lib)
+add_executable(jchess_engine src/main.cpp)
+target_link_libraries(jchess_engine PRIVATE chess_lib fathom_lib)
 
 FetchContent_Declare(
     Catch2
