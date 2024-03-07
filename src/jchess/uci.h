@@ -1,5 +1,8 @@
 #pragma once
 
+#include "core.h"
+#include "board.h"
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -21,14 +24,14 @@ namespace jchess {
         std::vector<std::string> moves;
     };
     struct UciGo {
-        std::vector<std::string> search_moves;
+        MoveVector search_moves = {};
         bool ponder = false;
         int wtime = -1; // maybe stupid
         int btime = -1; // maybe stupid
         int winc = 0;
         int binc = 0;
         int movestogo = 0;
-        int depth = -1;
+        int depth = 0;
         int nodes = -1;
         int mate = -1;
         int movetime = 0; // milliseconds
@@ -42,4 +45,7 @@ namespace jchess {
     UciPosition read_position_args(std::istringstream& tokens);
     UciGo read_go_args(std::istringstream& tokens);
     bool is_quit(UciCommand const& command);
+
+    // as of writing this, clang still has no support for the <syncstream> C++20 header.
+    void thread_safe_line_out(std::string const& line);
 }

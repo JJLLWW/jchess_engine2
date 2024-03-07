@@ -1,4 +1,5 @@
 #include "engine.h"
+#include "search_limits.h"
 
 #include <iostream>
 #include <fstream>
@@ -39,7 +40,7 @@ namespace jchess {
             return flags;
         }
 
-        auto engine_logger = spdlog::basic_logger_st("engine_logger", "./logs/engine.txt", true);
+        auto engine_logger = spdlog::basic_logger_mt("engine_logger", "./logs/engine.txt", true);
     }
 
     void uci_loop_with_engine(std::istream& input, Engine& engine) {
@@ -88,19 +89,28 @@ namespace jchess {
         }
     }
 
+    Engine::~Engine() {
+        stop_search_if_running();
+    }
+
     void Engine::handle_uci_no_arg(jchess::UciNoArgCmd const& cmd) {
+        std::ostringstream oss;
         switch(cmd) {
             case UciNoArgCmd::UCI:
-                std::cout << "id name JChess" << std::endl;
-                std::cout << "id author Foo Bar" << std::endl;
-                std::cout << "option name OwnBook type check default " << ((feature_flags & FF_OPENING_BOOK) ? "true" : "false") << std::endl;
-                std::cout << "uciok" << std::endl;
+                thread_safe_line_out("id name JChess");
+                thread_safe_line_out("id author FooBar");
+                oss <<  "option name OwnBook type check default " << ((feature_flags & FF_OPENING_BOOK) ? "true" : "false");
+                thread_safe_line_out(oss.str());
+                thread_safe_line_out("uciok");
                 break;
             case UciNoArgCmd::ISREADY:
-                std::cout << "readyok" << std::endl;
+                thread_safe_line_out("readyok");
                 break;
             case UciNoArgCmd::STOP:
-                // set some state to stop the running search
+                searcher.stop_mt_search();
+                break;
+            case UciNoArgCmd::PONDERHIT:
+                searcher.ponderhit();
                 break;
             default:
                 break; // ignore non-essential
@@ -115,38 +125,38 @@ namespace jchess {
     }
 
     void Engine::handle_uci_go(jchess::UciGo const& go) {
+        bool must_search = !go.search_moves.empty() || go.infinite;
+
         // we are so far into the endgame that we can lookup moves in a table rather than search
-        if((feature_flags & FF_ENDGAME_TABLES) && endgame_tables && board.get_num_pieces() <= config.endgame_dtz_depth) {
+        if(!must_search && (feature_flags & FF_ENDGAME_TABLES) && endgame_tables && board.get_num_pieces() <= config.endgame_dtz_depth) {
             auto dtz_entry = endgame_tables->probe_dtz_tables(board);
             // if there's some error with the table just fallback to regular search
             if(dtz_entry.has_value() && !dtz_entry.value().stalemate && !dtz_entry.value().checkmate) {
                 Move move = dtz_entry.value().move;
                 spdlog::debug("DTZ Table Move: {0}", move_to_string(move));
-                std::cout << "bestmove " << move_to_string(move) << std::endl;
+                thread_safe_line_out(std::string("bestmove ") + move_to_string(move));
                 return;
             }
         }
 
         // we still could find the current position in the opening book, fallback to search otherwise
-        if((feature_flags & FF_OPENING_BOOK) && !out_of_book) {
+        if(!must_search && (feature_flags & FF_OPENING_BOOK) && !out_of_book) {
             auto move = book.get_random_book_move(board);
             if(!move.has_value()) {
                 out_of_book = true;
             } else {
                 spdlog::debug("Book Move: {0}", move_to_string(move.value()));
-                std::cout << "bestmove " << move_to_string(move.value()) << std::endl;
+                thread_safe_line_out(std::string("bestmove ") + move_to_string(move.value()));
                 return;
             }
         }
 
         // we need to do a manual search as can't lookup the current position
+        stop_search_if_running();
         SearchLimits limits;
-        limits.max_time_ms = go.movetime;
-        auto info = searcher.search(board, limits);
-        std::ostringstream oss;
-        oss << info;
-        spdlog::debug("Search Info: {0}", oss.str());
-        std::cout << "bestmove " << move_to_string(info.best_move) << std::endl;
+        limits_from_uci_go(limits, go, board.get_side_to_move());
+        // seems a bit crazy to create another thread each search: revisit this
+        search_thread = std::thread(&Searcher::search_mt, &searcher, std::ref(board), limits);
     }
 
     void Engine::handle_uci_setoption(UciSetOption const& cmd) {
@@ -158,6 +168,13 @@ namespace jchess {
             } else {
                 feature_flags &= ~FF_OPENING_BOOK;
             }
+        }
+    }
+
+    void Engine::stop_search_if_running() {
+        searcher.stop_mt_search();
+        if(search_thread.joinable()) {
+            search_thread.join();
         }
     }
 }

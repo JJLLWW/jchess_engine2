@@ -42,6 +42,7 @@ add_library(chess_lib STATIC
     src/jchess/polyglot/pg_reader.cpp
     src/jchess/syzygy/sz_wrapper.cpp
     src/jchess/nnue/wrap_nnue.cpp
+    src/jchess/search_limits.cpp
 )
 target_link_libraries(chess_lib PRIVATE jdart_nnue)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -104,6 +105,7 @@ add_executable(tests
     test/syzgy.cpp
     test/nnue.cpp
     test/engine.cpp
+    test/search_time.cpp
 )
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain chess_lib fathom_lib)
 target_include_directories(tests PRIVATE src)

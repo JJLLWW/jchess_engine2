@@ -1,3 +1,5 @@
+https://chess.stackexchange.com/questions/14216/im-confused-by-uci-pondering-and-time-control
+
 Description of the universal chess interface (UCI)    April  2006
 =================================================================
 

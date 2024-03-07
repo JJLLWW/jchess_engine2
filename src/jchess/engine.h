@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <thread>
 
 #include "uci.h"
 #include "board.h"
@@ -29,6 +30,7 @@ namespace jchess {
     public:
         Engine();
         Engine(EngineConfig const& config);
+        ~Engine();
         void handle_uci_no_arg(UciNoArgCmd const& cmd);
         void handle_uci_position(UciPosition const& cmd);
         void handle_uci_setoption(UciSetOption const& cmd);
@@ -45,5 +47,8 @@ namespace jchess {
         bool out_of_book = false;
         // ENDGAME
         std::unique_ptr<syzgy::SZEndgameTables> endgame_tables = nullptr;
+        // background search
+        std::thread search_thread;
+        void stop_search_if_running();
     };
 }

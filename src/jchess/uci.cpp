@@ -9,6 +9,7 @@
 #include <string>
 #include <sstream>
 #include <unordered_set>
+#include <thread>
 
 namespace jchess {
     UciSetOption read_setoption_args(std::istringstream& tokens) {
@@ -61,7 +62,7 @@ namespace jchess {
                     if(non_searchmoves_subcmds.count(token) > 0) {
                         break;
                     } else {
-                        args.search_moves.push_back(token);
+                        args.search_moves.emplace_back(token);
                     }
                 }
             }
@@ -140,5 +141,12 @@ namespace jchess {
                 }
             }
         }
+    }
+
+    void thread_safe_line_out(std::string const& line) {
+        static std::mutex m;
+        m.lock();
+        std::cout << line << std::endl;
+        m.unlock();
     }
 }

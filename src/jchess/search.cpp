@@ -1,12 +1,26 @@
 #include "search.h"
+#include "uci.h"
+
 #include <cassert>
 #include <algorithm>
+#include <sstream>
+#include <spdlog/spdlog.h>
+
+#include <mutex>
 
 namespace jchess {
-    SearchInfo Searcher::iterative_deepening_search(Board& board, int max_depth) {
+    SearchInfo Searcher::iterative_deepening_search(Board& board, int max_depth, MoveVector const& root_restrict_moves) {
+        using namespace std::chrono;
         for(int depth=1; depth<=max_depth; ++depth) {
             Move iteration_best{"0000"};
-            Score score = alpha_beta_search(depth, board, MIN_SCORE, MAX_SCORE, iteration_best, true);
+            search_info.num_nodes = 0;
+            auto t1 = Searcher::Clock::now();
+            Score score = alpha_beta_search(depth, board, MIN_SCORE, MAX_SCORE, iteration_best, true, root_restrict_moves);
+            auto t2 = Searcher::Clock::now();
+            search_info.time_micros = duration_cast<microseconds>(t2 - t1).count();
+            if(score != MIN_SCORE && score != MAX_SCORE) {
+                search_info.score = score;
+            }
             // if we already have mate, there's no point in continuing the search
             if(score == MAX_SCORE) {
                 search_info.best_move = iteration_best;
@@ -22,8 +36,42 @@ namespace jchess {
             }
             search_info.depth = depth;
             search_info.best_move = iteration_best;
+            send_uci_info();
         }
         return search_info;
+    }
+
+    void Searcher::send_uci_info() {
+        uint64_t nps = search_info.num_nodes * 1'000'000 / search_info.time_micros;
+        std::ostringstream oss;
+        oss << "info ";
+        oss << "depth " << search_info.depth << " ";
+        if(search_info.mate_depth.has_value()) {
+            oss << "score mate " << search_info.mate_depth.value() << " ";
+        } else {
+            oss << "score cp " << search_info.score << " ";
+        }
+        oss << "nodes " << search_info.num_nodes << " ";
+        oss << "nps " << nps << " ";
+        oss << "time " << std::max(search_info.time_micros / 1000, 1ull) << " ";
+        if(!search_info.pv.empty()) {
+            oss << "multipv 1 pv";
+            for (const auto &move: search_info.pv) {
+                oss << " " << move_to_string(move);
+            }
+        } else {
+            oss << "string iteration bestmove " << move_to_string(search_info.best_move);
+        }
+        thread_safe_line_out(oss.str());
+    }
+
+    std::ostream& operator<<(std::ostream& os, SearchLimits const& limits) {
+        os << "max_time: " << limits.max_time_ms <<
+            " max_nodes: " << limits.max_nodes <<
+            " depth: " << limits.depth <<
+            " infinite: " << limits.infinite <<
+            " ponder: " << limits.ponder;
+        return os;
     }
 
     std::ostream& operator<<(std::ostream& os, SearchInfo const& info) {
@@ -63,8 +111,10 @@ namespace jchess {
         if(limits.max_time_ms > 0) {
             cutoff = Searcher::Clock::now() + milliseconds(limits.max_time_ms);
         }
+
+        const int default_depth = limits.infinite ? 100000 : DEFAULT_MAX_DEPTH;
         auto t1 = Searcher::Clock::now();
-        iterative_deepening_search(board, limits.depth == 0 ? DEFAULT_MAX_DEPTH : limits.depth);
+        iterative_deepening_search(board, limits.depth == 0 ? default_depth : limits.depth, limits.search_moves);
         auto t2 = Searcher::Clock::now();
 
         auto elapsed = duration_cast<microseconds>(t2 - t1);
@@ -72,7 +122,34 @@ namespace jchess {
         return search_info;
     }
 
-    Score Searcher::alpha_beta_search(int depth, Board &board, Score alpha, Score beta, Move& best_move, bool root) {
+    void Searcher::stop_mt_search() {
+        std::lock_guard lk{mut};
+        search_done = true;
+        search_cancelled = true;
+        cv.notify_all();
+    }
+
+    void Searcher::ponderhit() {
+        search_done = true;
+        cv.notify_all();
+    }
+
+    void Searcher::search_mt(Board& board, SearchLimits limits) {
+        search_done = false;
+        search_cancelled = false;
+        auto info = search(board, limits);
+        std::ostringstream oss;
+        oss << info;
+        spdlog::debug("Search Info: {0}", oss.str());
+        // in an infinite/ponder search we don't send the bestmove until the client requests it.
+        if(limits.infinite || limits.ponder) {
+            std::unique_lock lk{mut};
+            cv.wait(lk, [this] { return search_done; });
+        }
+        thread_safe_line_out(std::string("bestmove ") + move_to_string(info.best_move));
+    }
+
+    Score Searcher::alpha_beta_search(int depth, Board &board, Score alpha, Score beta, Move& best_move, bool root, MoveVector const& root_restrict_moves) {
         assert(depth >= 0);
         if(depth == 0) {
             return quiesence_search(alpha, beta, board);
@@ -89,12 +166,16 @@ namespace jchess {
         }
 
         MoveVector moves;
-        board.generate_legal_moves(moves);
-        search_info.num_nodes += moves.size();
+        if(root && !root_restrict_moves.empty()) {
+            moves = root_restrict_moves;
+        } else {
+            board.generate_legal_moves(moves);
+        }
+        search_info.num_nodes += moves.size(); // doesn't make sense to do this here
 
-        if(moves.empty()) { // move will be set to a null move if called with a "finished" position
+        if(moves.empty()) {
             if(board.in_check()) {
-                return MIN_SCORE; // checkmate (is < alpha a problem?)
+                return MIN_SCORE; // checkmate
             } else {
                 return DRAW_SCORE; // stalemate
             }
@@ -171,7 +252,7 @@ namespace jchess {
     }
 
     bool Searcher::search_should_stop() {
-        return Searcher::Clock::now() > cutoff || search_info.num_nodes > node_limit;
+        return Searcher::Clock::now() > cutoff || search_info.num_nodes > node_limit || search_cancelled;
     }
 
     void Searcher::enable_nnue_eval(std::unique_ptr<nnue_eval::NNUEEvaluator>&& eval) {
