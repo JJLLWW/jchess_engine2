@@ -2,10 +2,10 @@
 
 namespace jchess {
     long long compute_time_to_search_msec(int my_time, int op_time, int my_inc, int op_inc) {
-        const long long max_time = 5000ll;
+        const long long max_time = 8000ll;
         const double time_factor = std::clamp((double)my_time/(double)op_time, 0.5, 1.5);
 
-        const double time_dbl = (my_time * time_factor) / 60.0;
+        const double time_dbl = (my_time * time_factor) / 40.0;
         auto time_ll = static_cast<long long>(std::ceil(time_dbl));
 
         return std::min(max_time, time_ll);
