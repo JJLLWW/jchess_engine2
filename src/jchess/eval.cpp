@@ -1,5 +1,6 @@
 #include "eval.h"
 #include "temp_eval.h"
+#include <bit>
 
 namespace jchess {
     namespace {

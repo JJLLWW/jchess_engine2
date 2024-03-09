@@ -10,7 +10,7 @@
 
 namespace jchess {
     namespace detail {
-        const int offset_of_dir[8] = {-1, 1, 8, -8, 7, 9, -9, -7 };
+        constexpr int offset_of_dir[8] = {-1, 1, 8, -8, 7, 9, -9, -7 };
     }
     const std::string starting_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     const std::string piece_chars = "PRNBKQprnbkq";

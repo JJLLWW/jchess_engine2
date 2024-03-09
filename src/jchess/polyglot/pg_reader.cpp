@@ -1,5 +1,6 @@
 #include "pg_reader.h"
 #include <random>
+#include <bit>
 
 namespace jchess::polyglot {
     namespace {

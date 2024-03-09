@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.18)
 project(jchess_engine)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -24,8 +24,8 @@ if(${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL arm64)
     target_compile_definitions(jdart_nnue INTERFACE SIMD NEON)
     target_compile_options(jdart_nnue INTERFACE -mcpu=apple-m1)
 else()
-    target_compile_definitions(jdart_nnue INTERFACE SIMD AVX2)
-    target_compile_options(jdart_nnue INTERFACE -mavx2 -mbmi2 -msse2)
+    # target_compile_definitions(jdart_nnue INTERFACE SIMD AVX2)
+    # target_compile_options(jdart_nnue INTERFACE -mavx2 -mbmi2 -msse2)
 endif()
 add_library(chess_lib STATIC
     src/jchess/core.cpp
@@ -53,6 +53,8 @@ target_include_directories(chess_lib PUBLIC src)
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # hit constexpr limit for the rook table, this is necessary
     target_compile_options(chess_lib PUBLIC -fconstexpr-steps=104857600)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    target_compile_options(chess_lib PUBLIC -fpermissive -fconstexpr-ops-limit=104857600)
 endif ()
 
 set(BOOST_INCLUDE_LIBRARIES container)

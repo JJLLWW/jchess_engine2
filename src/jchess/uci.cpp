@@ -10,6 +10,7 @@
 #include <sstream>
 #include <unordered_set>
 #include <thread>
+#include <mutex>
 
 namespace jchess {
     UciSetOption read_setoption_args(std::istringstream& tokens) {

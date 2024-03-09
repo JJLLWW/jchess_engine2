@@ -1,6 +1,7 @@
 #include "board.h"
 #include "movegen.h"
 
+#include <bit>
 #include <sstream>
 #include <numeric>
 #include <cassert>

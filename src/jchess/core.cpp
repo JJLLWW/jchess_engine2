@@ -8,6 +8,7 @@
 #include <cassert>
 #include <vector>
 #include <algorithm>
+#include <cctype>
 
 
 namespace jchess {
@@ -124,7 +125,7 @@ namespace jchess {
         std::vector<std::pair<Square, Piece>> fen_pieces;
         int rank = 7, file = 0;
         for(char c : pieces) {
-            if(isnumber(c)) {
+            if(isdigit(c)) {
                 file += (c - '0');
             } else if(c == '/') {
                 --rank;

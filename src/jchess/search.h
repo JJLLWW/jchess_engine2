@@ -4,6 +4,7 @@
 #include "board.h"
 #include "nnue/wrap_nnue.h"
 
+#include <condition_variable>
 #include <chrono>
 #include <iostream>
 #include <unordered_set>

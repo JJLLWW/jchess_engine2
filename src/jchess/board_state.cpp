@@ -2,6 +2,7 @@
 #include "bitboard.h"
 #include "moves.h"
 
+#include <bit>
 #include <numeric>
 
 namespace jchess {

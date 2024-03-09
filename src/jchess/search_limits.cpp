@@ -1,4 +1,5 @@
 #include "search_limits.h"
+#include <cmath>
 
 namespace jchess {
     long long compute_time_to_search_msec(int my_time, int op_time, int my_inc, int op_inc) {

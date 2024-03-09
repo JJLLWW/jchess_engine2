@@ -53,7 +53,7 @@ namespace jchess {
         }
         oss << "nodes " << search_info.num_nodes << " ";
         oss << "nps " << nps << " ";
-        oss << "time " << std::max(search_info.time_micros / 1000, 1ull) << " ";
+        oss << "time " << std::max(search_info.time_micros / 1000, (uint64_t)1ull) << " ";
         if(!search_info.pv.empty()) {
             oss << "multipv 1 pv";
             for (const auto &move: search_info.pv) {
