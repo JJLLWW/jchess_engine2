@@ -1,0 +1,6 @@
+services:
+  jchess:
+    image: jchess_container
+    ports:
+      - "443:443"
+      - "8443:8443"
