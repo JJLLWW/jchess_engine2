@@ -139,7 +139,6 @@ namespace jchess {
     Bitboard get_all_attacked_squares(BoardState const &state, Color color) {
         Bitboard all_attacked = 0ull;
 
-        // the copies are a bit disgusting, can't I just store piece lists in the board state?
         all_attacked |= KING_ATTACKS[state.king_sq[color]];
         Bitboard pawns = state.piece_bbs[PAWN | color];
         Bitboard knights = state.piece_bbs[KNIGHT | color];

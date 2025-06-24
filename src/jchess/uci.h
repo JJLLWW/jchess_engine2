@@ -26,8 +26,8 @@ namespace jchess {
     struct UciGo {
         MoveVector search_moves = {};
         bool ponder = false;
-        int wtime = -1; // maybe stupid
-        int btime = -1; // maybe stupid
+        int wtime = -1;
+        int btime = -1;
         int winc = 0;
         int binc = 0;
         int movestogo = 0;

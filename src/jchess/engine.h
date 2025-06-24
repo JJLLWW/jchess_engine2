@@ -42,12 +42,9 @@ namespace jchess {
         Searcher searcher {};
         Move best_move {"0000"};
         int search_limit = 0;
-        // OPENING_BOOK
-        polyglot::PGMappedBook book {}; // maybe this should be unique_ptr as well
+        polyglot::PGMappedBook book {};
         bool out_of_book = false;
-        // ENDGAME
         std::unique_ptr<syzgy::SZEndgameTables> endgame_tables = nullptr;
-        // background search
         std::thread search_thread;
         void stop_search_if_running();
     };

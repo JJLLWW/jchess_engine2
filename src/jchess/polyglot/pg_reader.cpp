@@ -87,7 +87,7 @@ namespace jchess::polyglot {
         Square src = square_from_rank_file(src_rank, src_file);
         Square dest = square_from_rank_file(dest_rank, dest_file);
 
-        // castling encoded in a maverick format - correct into the uci format
+        // castling encoded in different format - correct into the uci format
         if(board.get_board_state().pieces[src] == (KING | board.get_side_to_move())) {
             if (src == E1) {
                 dest = (dest == H1) ? G1 : dest;

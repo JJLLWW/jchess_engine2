@@ -19,7 +19,6 @@ TEST_CASE("time limited search doesn't hang") {
     Searcher searcher;
     SearchLimits limits;
     limits.max_time_ms = 100; // 1/10 second
-    // messed up move when using time limited search.
     auto info = searcher.search(board, limits);
 }
 
@@ -54,7 +53,6 @@ TEST_CASE("restricted search basic") {
     moves.emplace_back("a2a4");
     Move best = "0000";
     searcher.alpha_beta_search(2, board, MIN_SCORE, MAX_SCORE, best, true, moves);
-    // it's definitely the "best" of the moves we have to consider.
     REQUIRE(move_to_string(best) == "a2a4");
     SearchLimits limits {.max_nodes = 1000, .search_moves = moves };
     auto info = searcher.search(board, limits);

@@ -57,7 +57,6 @@ namespace jchess {
 
     bool is_orthogonal_dir(Direction dir);
 
-    // should this really be in core?
     constexpr bool is_negative_dir(Direction dir) {
         return (dir == WEST) || (dir == SOUTH) || (dir == SWEST) || (dir == SEAST);
     }
@@ -161,7 +160,6 @@ namespace jchess {
         Move(Square source, Square dest, std::optional<PieceType> promotion_type) : source{source}, dest{dest}, promotion_type{promotion_type} {}
         Square source;
         Square dest;
-//        Piece promotion = NO_PIECE; // should't this be a piece type?
         std::optional<PieceType> promotion_type;
         bool is_null_move = false;
     };

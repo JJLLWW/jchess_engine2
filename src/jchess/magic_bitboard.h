@@ -55,7 +55,6 @@ namespace jchess {
             }
         }
 
-        // outside of testing these are only used in this file
         constexpr Bitboard get_rook_attacks_empty_board(Square square) {
             auto [rank, file] = rank_file_from_square(square);
             return (RANK_BBS[rank] | FILE_BBS[file]) & ~bb_from_square(square);

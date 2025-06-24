@@ -155,7 +155,7 @@ namespace jchess {
         stop_search_if_running();
         SearchLimits limits;
         limits_from_uci_go(limits, go, board.get_side_to_move());
-        // seems a bit crazy to create another thread each search: revisit this
+        // new thread per search, inefficient: revisit this
         search_thread = std::thread(&Searcher::search_mt, &searcher, std::ref(board), limits);
     }
 

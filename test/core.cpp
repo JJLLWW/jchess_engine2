@@ -25,7 +25,6 @@ TEST_CASE("Square Helpers") {
     REQUIRE(horizontal_distance(B2, E2) == 3);
     REQUIRE(vertical_distance(B2, B5) == 3);
     REQUIRE(square_from_rank_file(2, B) == B3);
-    // 0-based rank (maybe too confusing)
     REQUIRE(rank_file_from_square(C3) == std::array<int, 2>{2, C});
     REQUIRE(square_from_alg_not("d5") == D5);
 }
@@ -67,7 +66,6 @@ TEST_CASE("FEN parsing") {
     REQUIRE(fen.enp_square.has_value() == false);
     REQUIRE(fen.pieces.size() == 32);
     REQUIRE(fen.castle_right_mask == (WHITE_QS | BLACK_KS));
-    // fen parsing is broken?
     FEN fen2{"8/8/8/8/8/8/8/KQ1r4 w KQkq - 0 1"};
     REQUIRE(true);
 }

@@ -1,4 +1,3 @@
-// ideally would want the include to look like nnue/nnue.h
 #include "nnue.h"
 #include "wrap_nnue.h"
 #include <fstream>

@@ -21,7 +21,7 @@ int main() {
     std::cout << "starting long nnue search..." << std::endl;
     searcher.enable_nnue_eval(std::make_unique<nnue_eval::NNUEEvaluator>("../data/nn-04a843f8932e.nnue"));
     auto t3 = high_resolution_clock::now();
-    limits.depth = 6; // bit sluggish
+    limits.depth = 6;
     searcher.search(board, limits);
     auto t4 = high_resolution_clock::now();
     auto elapsed2 = duration_cast<milliseconds>(t4 - t3);

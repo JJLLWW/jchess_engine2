@@ -61,7 +61,6 @@ namespace jchess {
         void send_uci_info();
     private:
         using Clock = std::chrono::system_clock;
-        // time in the future where need to stop the search
         std::chrono::time_point<Clock> cutoff {Clock::now() + std::chrono::years(10)};
         uint64_t node_limit = -1ull;
         SearchInfo search_info {};

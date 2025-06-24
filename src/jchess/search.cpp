@@ -217,8 +217,7 @@ namespace jchess {
 
         return alpha;
     }
-
-    // somethings off here, "bad" positions can give insanely long quiesence searches > 100 deep
+    
     Score Searcher::quiesence_search(Score alpha, Score beta, Board& board) {
         if(search_should_stop()) {
             search_info.terminated = true;
